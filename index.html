@@ -10,433 +10,357 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
 <title>Piano Hero</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#05050e;
-  --cyan:#00f5ff;--green:#39ff14;--blue:#4a7fff;
-  --pink:#ff2d78;--gold:#ffcc00;--orange:#ff7700;
-}
 html,body{
-  width:100%;height:100%;background:var(--bg);color:#fff;
-  font-family:'Rajdhani',sans-serif;overflow:hidden;
+  width:100%;height:100%;overflow:hidden;
+  background:#05050e;color:#fff;
+  font-family:'Rajdhani',sans-serif;
   -webkit-user-select:none;user-select:none;touch-action:none;
 }
-.screen{display:none;width:100%;height:100%}
-.screen.active{display:flex;flex-direction:column}
 
-/* ═══════════════ HOME ═══════════════ */
+/* ── SCREENS ── */
+.screen{display:none;width:100%;height:100%;flex-direction:column}
+.screen.active{display:flex}
+
+/* ════════════════════════════════
+   HOME
+════════════════════════════════ */
 #homeScreen{
-  position:relative;overflow:hidden;
-  align-items:center;justify-content:center;gap:20px;padding:24px 20px;
+  align-items:center;justify-content:center;gap:18px;
+  padding:20px 18px;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,80,200,.22) 0%,transparent 65%),
-    radial-gradient(ellipse 60% 80% at 80% 100%,rgba(255,45,120,.14) 0%,transparent 60%),
-    var(--bg);
+    radial-gradient(ellipse 80% 55% at 50% 0%,rgba(0,80,200,.22) 0%,transparent 65%),
+    radial-gradient(ellipse 55% 75% at 80% 100%,rgba(255,45,120,.13) 0%,transparent 60%),
+    #05050e;
+  position:relative;overflow:hidden;
 }
-/* animated grid lines */
 #homeScreen::before{
   content:'';position:absolute;inset:0;pointer-events:none;
   background:
-    repeating-linear-gradient(0deg,transparent,transparent 44px,rgba(0,200,255,.04) 45px),
-    repeating-linear-gradient(90deg,transparent,transparent 44px,rgba(0,200,255,.04) 45px);
+    repeating-linear-gradient(0deg,transparent,transparent 44px,rgba(0,200,255,.03) 45px),
+    repeating-linear-gradient(90deg,transparent,transparent 44px,rgba(0,200,255,.03) 45px);
   animation:gridScroll 8s linear infinite;
 }
-@keyframes gridScroll{from{background-position:0 0,0 0}to{background-position:0 45px,0 0}}
+@keyframes gridScroll{to{background-position:0 45px,0 0}}
 
-.logo-wrap{text-align:center;position:relative;z-index:1}
 .logo-main{
-  font-family:'Orbitron',monospace;
-  font-size:clamp(30px,8vw,64px);font-weight:900;letter-spacing:5px;
-  background:linear-gradient(135deg,#fff 0%,var(--cyan) 40%,var(--blue) 70%,var(--pink) 100%);
+  font-family:'Orbitron',monospace;font-size:clamp(28px,8vw,62px);
+  font-weight:900;letter-spacing:5px;
+  background:linear-gradient(135deg,#fff 0%,#00f5ff 40%,#4a7fff 70%,#ff2d78 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 0 40px rgba(0,245,255,.6));
+  filter:drop-shadow(0 0 36px rgba(0,245,255,.55));
+  position:relative;z-index:1;text-align:center;
 }
-.logo-piano{
-  font-size:clamp(14px,2.5vw,22px);letter-spacing:12px;
-  color:rgba(255,255,255,.25);font-family:'Orbitron',monospace;
-  text-transform:uppercase;margin-top:4px;
+.logo-sub{
+  font-size:clamp(10px,2vw,14px);letter-spacing:10px;
+  color:rgba(255,255,255,.22);font-family:'Orbitron',monospace;
+  position:relative;z-index:1;text-align:center;
 }
-/* animated keys decoration */
-.home-keys{
-  display:flex;gap:3px;align-items:flex-start;position:relative;z-index:1;
+
+/* 7-key home preview */
+.home-keys-preview{
+  display:flex;gap:5px;position:relative;z-index:1;
 }
-.hk{
-  width:clamp(18px,2.8vw,32px);
-  border-radius:0 0 5px 5px;
-  cursor:default;
+.hkp{
+  width:clamp(28px,5vw,44px);height:clamp(40px,7vw,60px);
+  border-radius:8px;cursor:default;
+  transition:all .15s;
 }
-.hk.w{
-  height:clamp(55px,9vw,90px);
-  background:linear-gradient(180deg,#b0b4cc 0%,#e8ecf8 30%,#d0d4e8 100%);
-  border:1px solid rgba(0,0,0,.25);border-bottom:4px solid rgba(0,0,0,.3);
-  box-shadow:0 4px 12px rgba(0,0,0,.4);
-}
-.hk.b{
-  height:clamp(34px,5.5vw,56px);
-  width:clamp(12px,1.8vw,20px);
-  background:linear-gradient(180deg,#111124 0%,#1e1e3a 100%);
-  border:1px solid #000;border-bottom:3px solid #000;
-  margin:0 -6px;z-index:2;position:relative;
-  box-shadow:2px 3px 8px rgba(0,0,0,.9);
-}
-.hk.lit{box-shadow:0 0 20px var(--cyan),0 0 40px rgba(0,245,255,.4)!important;background:linear-gradient(180deg,rgba(0,245,255,.7),rgba(0,245,255,.3))!important}
+.hkp.lit{transform:scale(1.1)!important;filter:brightness(1.6)!important}
 
 .upload-zone{
-  border:2px dashed rgba(0,245,255,.2);border-radius:16px;
-  padding:22px 36px;text-align:center;cursor:pointer;
-  background:rgba(0,245,255,.02);transition:all .3s;
-  max-width:440px;width:100%;position:relative;z-index:1;
+  border:2px dashed rgba(0,245,255,.18);border-radius:14px;
+  padding:20px 32px;text-align:center;cursor:pointer;
+  background:rgba(0,245,255,.02);transition:all .25s;
+  max-width:420px;width:100%;position:relative;z-index:1;
 }
 .upload-zone:hover,.upload-zone.drag{
-  border-color:var(--cyan);background:rgba(0,245,255,.06);
-  box-shadow:0 0 50px rgba(0,245,255,.1),inset 0 0 30px rgba(0,245,255,.04);
+  border-color:#00f5ff;background:rgba(0,245,255,.06);
+  box-shadow:0 0 40px rgba(0,245,255,.1);
 }
-.upload-zone .ico{font-size:36px;margin-bottom:8px}
-.upload-zone p{color:rgba(255,255,255,.45);font-size:13px;line-height:1.65}
-.upload-zone strong{color:var(--cyan)}
+.upload-zone .icz{font-size:32px;margin-bottom:6px}
+.upload-zone p{color:rgba(255,255,255,.4);font-size:13px;line-height:1.7}
+.upload-zone strong{color:#00f5ff}
 #fileInput{display:none}
-#songInfo{font-size:12px;color:rgba(255,255,255,.38);text-align:center;min-height:16px;position:relative;z-index:1;}
+#songInfo{font-size:12px;color:rgba(255,255,255,.35);text-align:center;min-height:16px;position:relative;z-index:1}
 
-/* buttons */
-.btn{border:none;cursor:pointer;font-family:'Orbitron',monospace;font-weight:700;
-     letter-spacing:2px;text-transform:uppercase;border-radius:8px;transition:all .16s;}
+.btn{
+  border:none;cursor:pointer;
+  font-family:'Orbitron',monospace;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;border-radius:8px;
+  transition:all .15s;
+}
 .btn-glow{
-  background:linear-gradient(135deg,var(--cyan),#0077aa);color:#000;
-  font-size:13px;padding:14px 38px;
-  box-shadow:0 0 30px rgba(0,245,255,.45),0 4px 20px rgba(0,0,0,.4);
+  background:linear-gradient(135deg,#00f5ff,#0077aa);color:#000;
+  font-size:13px;padding:13px 36px;
+  box-shadow:0 0 28px rgba(0,245,255,.45),0 4px 18px rgba(0,0,0,.4);
 }
-.btn-glow:hover{box-shadow:0 0 50px rgba(0,245,255,.7),0 4px 20px rgba(0,0,0,.4);transform:translateY(-2px)}
+.btn-glow:hover{box-shadow:0 0 50px rgba(0,245,255,.7);transform:translateY(-2px)}
 .btn-glow:active{transform:scale(.96)}
-.btn-glow:disabled{opacity:.25;pointer-events:none}
+.btn-glow:disabled{opacity:.22;pointer-events:none}
 .btn-out{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.16);
-  color:rgba(255,255,255,.55);font-size:11px;padding:10px 22px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);
+  color:rgba(255,255,255,.5);font-size:11px;padding:10px 20px;
 }
-.btn-out:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,255,.06)}
-.btn-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center}
+.btn-out:hover{border-color:#00f5ff;color:#00f5ff;background:rgba(0,245,255,.06)}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1}
 
-.mode-row{display:flex;gap:4px;background:rgba(255,255,255,.05);border-radius:40px;padding:4px;position:relative;z-index:1;}
+.mode-row{display:flex;gap:4px;background:rgba(255,255,255,.05);border-radius:40px;padding:4px;position:relative;z-index:1}
 .mode-btn{
   background:transparent;border:none;cursor:pointer;
-  color:rgba(255,255,255,.36);font-family:'Rajdhani',sans-serif;
-  font-weight:600;font-size:14px;padding:7px 16px;border-radius:40px;transition:all .2s;
+  color:rgba(255,255,255,.35);font-family:'Rajdhani',sans-serif;
+  font-weight:600;font-size:14px;padding:7px 15px;border-radius:40px;transition:all .2s;
 }
-.mode-btn.on{background:rgba(0,245,255,.13);color:var(--cyan);box-shadow:0 0 14px rgba(0,245,255,.2);}
-.mode-desc{font-size:11px;letter-spacing:.5px;color:rgba(255,255,255,.26);text-align:center;min-height:16px;position:relative;z-index:1;}
-.ctrl-row{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+.mode-btn.on{background:rgba(0,245,255,.13);color:#00f5ff;box-shadow:0 0 12px rgba(0,245,255,.2)}
+.mode-desc{font-size:11px;letter-spacing:.5px;color:rgba(255,255,255,.25);text-align:center;min-height:16px;position:relative;z-index:1}
+
+.ctrl-row{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
 .ctrl-lbl{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.35)}
 input[type=range]{
-  -webkit-appearance:none;appearance:none;width:130px;height:3px;
+  -webkit-appearance:none;width:120px;height:3px;
   background:rgba(255,255,255,.12);border-radius:3px;outline:none;
 }
 input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;width:16px;height:16px;
-  border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 10px var(--cyan);
+  border-radius:50%;background:#00f5ff;cursor:pointer;box-shadow:0 0 8px #00f5ff;
 }
-.ctrl-v{font-family:'Orbitron',monospace;font-size:12px;color:var(--cyan);min-width:34px}
+.ctrl-v{font-family:'Orbitron',monospace;font-size:12px;color:#00f5ff;min-width:30px}
 
-/* ═══════════════ GAME SCREEN ═══════════════ */
-#gameScreen{background:var(--bg);position:relative}
+/* ════════════════════════════════
+   GAME SCREEN
+════════════════════════════════ */
+#gameScreen{background:#02020a;position:relative}
 
-/* ── HUD top bar ── */
+/* HUD */
 #hud{
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;height:52px;flex-shrink:0;
-  background:linear-gradient(180deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.5) 100%);
-  border-bottom:1px solid rgba(0,245,255,.08);
-  position:relative;z-index:40;backdrop-filter:blur(14px);gap:10px;
+  padding:0 14px;height:50px;flex-shrink:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.5) 100%);
+  border-bottom:1px solid rgba(0,245,255,.07);
+  position:relative;z-index:40;backdrop-filter:blur(12px);gap:8px;
 }
-.hud-b{display:flex;flex-direction:column;align-items:center;min-width:52px}
-.hud-lbl{font-size:7px;letter-spacing:3px;color:rgba(255,255,255,.22);text-transform:uppercase}
-.hud-v{font-family:'Orbitron',monospace;font-size:18px;font-weight:700}
-#scoreV{color:var(--cyan)}
-#comboV{color:var(--gold)}
+.hud-b{display:flex;flex-direction:column;align-items:center;min-width:48px}
+.hud-lbl{font-size:7px;letter-spacing:3px;color:rgba(255,255,255,.2)}
+.hud-v{font-family:'Orbitron',monospace;font-size:17px;font-weight:700}
+#scoreV{color:#00f5ff}
+#comboV{color:#ffcc00}
 
-/* health */
-#healthWrap{
-  flex:1;max-width:360px;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-}
-#healthTop{display:flex;justify-content:space-between;width:100%;align-items:center;}
-#healthLbl{font-size:7px;letter-spacing:3px;color:rgba(255,255,255,.28);text-transform:uppercase}
-#healthPct{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--green);transition:color .3s}
+#healthWrap{flex:1;max-width:320px;display:flex;flex-direction:column;align-items:center;gap:3px}
+#healthTop{display:flex;justify-content:space-between;width:100%;align-items:center}
+#healthLbl{font-size:7px;letter-spacing:3px;color:rgba(255,255,255,.25)}
+#healthPct{font-family:'Orbitron',monospace;font-size:11px;color:#39ff14;transition:color .3s}
 #healthTrack{
-  width:100%;height:11px;
-  background:rgba(0,0,0,.5);
-  border-radius:8px;overflow:hidden;
-  border:1px solid rgba(255,255,255,.08);
-  position:relative;
+  width:100%;height:10px;background:rgba(0,0,0,.5);border-radius:6px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);position:relative;
 }
 #healthFill{
-  height:100%;width:100%;border-radius:8px;
-  background:linear-gradient(90deg,var(--green),#80ff50);
-  transition:width .15s ease-out,background .4s;
-  position:relative;
+  height:100%;width:100%;border-radius:6px;
+  background:linear-gradient(90deg,#39ff14,#80ff50);
+  transition:width .14s,background .4s;
 }
-#healthFill::after{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:rgba(255,255,255,.3);border-radius:8px 8px 0 0}
-#healthTrack.danger #healthFill{background:linear-gradient(90deg,#cc0000,var(--pink));animation:hpPulse .35s ease-in-out infinite alternate}
-#healthTrack.warn  #healthFill{background:linear-gradient(90deg,#bb7700,var(--gold))}
-@keyframes hpPulse{from{box-shadow:0 0 4px #ff0000}to{box-shadow:0 0 22px #ff0000,0 0 44px rgba(255,0,0,.4)}}
+#healthFill::after{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:rgba(255,255,255,.28);border-radius:6px 6px 0 0}
+#healthTrack.danger #healthFill{background:linear-gradient(90deg,#cc0000,#ff2d78);animation:hpPulse .35s ease-in-out infinite alternate}
+#healthTrack.warn   #healthFill{background:linear-gradient(90deg,#bb7700,#ffcc00)}
+@keyframes hpPulse{from{box-shadow:0 0 4px #f00}to{box-shadow:0 0 20px #f00,0 0 40px rgba(255,0,0,.4)}}
 
-/* song info */
-.hud-center{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:90px;}
-#songTitleH{
-  font-family:'Orbitron',monospace;font-size:9px;color:rgba(255,255,255,.35);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;
-}
-#progBar{height:2px;background:rgba(255,255,255,.07);border-radius:2px;width:100%;min-width:90px;overflow:hidden}
-#progFill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0%;transition:width .1s linear}
+.hud-center{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:80px}
+#songTitleH{font-family:'Orbitron',monospace;font-size:8px;color:rgba(255,255,255,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+#progBar{height:2px;background:rgba(255,255,255,.07);border-radius:2px;width:100%;overflow:hidden}
+#progFill{height:100%;background:linear-gradient(90deg,#4a7fff,#00f5ff);width:0%;transition:width .1s}
 
 #btnPause{
-  flex-shrink:0;display:flex;align-items:center;gap:5px;
-  font-size:10px;padding:7px 12px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;
-  color:rgba(255,255,255,.55);font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;
-  cursor:pointer;transition:all .14s;
+  flex-shrink:0;font-size:10px;padding:6px 11px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;
+  color:rgba(255,255,255,.5);font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;
+  cursor:pointer;transition:all .13s;
 }
-#btnPause:hover{background:rgba(0,245,255,.08);border-color:rgba(0,245,255,.25);color:var(--cyan)}
+#btnPause:hover{background:rgba(0,245,255,.07);border-color:rgba(0,245,255,.24);color:#00f5ff}
 
-/* wait bar */
 #waitBar{
-  display:none;position:relative;height:38px;flex-shrink:0;z-index:25;
-  background:rgba(255,204,0,.05);border-bottom:1px solid rgba(255,204,0,.2);
+  display:none;position:relative;height:34px;flex-shrink:0;z-index:25;
+  background:rgba(255,204,0,.05);border-bottom:1px solid rgba(255,204,0,.18);
 }
 #waitText{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;
-  color:var(--gold);text-shadow:0 0 10px var(--gold);
+  color:#ffcc00;text-shadow:0 0 10px #ffcc00;
   white-space:nowrap;animation:wPulse .9s ease-in-out infinite alternate;
 }
 @keyframes wPulse{from{opacity:.5}to{opacity:1}}
 
-/* ═══════════════ GUITAR HERO STAGE ═══════════════ */
-#stageWrap{
-  flex:1;position:relative;overflow:hidden;min-height:0;
-  background:#02020a;
-}
-
-/* Lane canvas — full stage rendered in JS */
-#laneCanvas{
-  position:absolute;inset:0;width:100%;height:100%;
-  display:block;z-index:3;
-}
-
-/* Feedback text */
+/* Stage canvas */
+#stageWrap{flex:1;position:relative;overflow:hidden;min-height:0;background:#02020a}
+#laneCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:3}
 #feedback{
-  position:absolute;
-  top:22%;left:50%;transform:translateX(-50%);
-  font-family:'Orbitron',monospace;
-  font-size:clamp(18px,4vw,32px);font-weight:900;
+  position:absolute;top:20%;left:50%;transform:translateX(-50%);
+  font-family:'Orbitron',monospace;font-size:clamp(16px,4vw,30px);font-weight:900;
   pointer-events:none;opacity:0;transition:opacity .08s;
-  white-space:nowrap;text-shadow:0 0 30px currentColor;
-  z-index:30;
+  white-space:nowrap;text-shadow:0 0 28px currentColor;z-index:30;
 }
+#flash{position:absolute;inset:0;pointer-events:none;z-index:35;opacity:0}
 
-/* Screen flash */
-#flash{position:absolute;inset:0;pointer-events:none;z-index:35;opacity:0;}
-
-/* ── Piano keyboard — INVERTED (black on top, white hang down) ── */
+/* ════════════════════════════════
+   7 BIG KEYS
+════════════════════════════════ */
 #pianoWrapper{
-  position:relative;flex-shrink:0;z-index:20;
-  background:linear-gradient(180deg,#0c0c20 0%,#05050e 100%);
-  border-top:3px solid rgba(0,245,255,.25);
-  box-shadow:0 -15px 60px rgba(0,0,0,.9),0 -3px 30px rgba(0,245,255,.06);
+  flex-shrink:0;z-index:20;position:relative;
+  background:linear-gradient(180deg,#08081a 0%,#05050e 100%);
+  border-top:2px solid rgba(0,245,255,.2);
+  box-shadow:0 -10px 50px rgba(0,0,0,.9),0 -2px 20px rgba(0,245,255,.05);
+  padding:10px 8px 12px;
 }
-#pianoScroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;height:100%}
-#pianoScroll::-webkit-scrollbar{display:none}
-#keyboard{position:relative;height:100%;display:inline-block}
+#keysRow{
+  display:flex;gap:6px;height:100%;
+  width:100%;
+}
+.bigkey{
+  flex:1;border-radius:12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  padding-bottom:10px;gap:4px;
+  position:relative;overflow:hidden;
+  transition:transform .06s,box-shadow .06s,filter .06s;
+  -webkit-tap-highlight-color:transparent;
+  border:2px solid rgba(255,255,255,.07);
+  /* touch */
+  touch-action:none;
+}
+.bigkey::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:35%;
+  background:rgba(255,255,255,.06);border-radius:12px 12px 0 0;
+}
+.bigkey .key-num{
+  font-family:'Orbitron',monospace;font-size:clamp(18px,3.5vw,28px);font-weight:900;
+  color:rgba(255,255,255,.9);text-shadow:0 2px 8px rgba(0,0,0,.5);
+  position:relative;z-index:1;
+}
+.bigkey .key-note{
+  font-size:clamp(8px,1.5vw,11px);letter-spacing:1px;
+  color:rgba(255,255,255,.45);font-family:'Rajdhani',sans-serif;
+  position:relative;z-index:1;
+}
+.bigkey.pressed{
+  transform:scale(.94);
+  filter:brightness(1.6);
+}
+.bigkey.glow{
+  border-color:rgba(255,255,255,.35)!important;
+  filter:brightness(1.35);
+  animation:keyGlow .4s ease-in-out infinite alternate;
+}
+@keyframes keyGlow{from{filter:brightness(1.2)}to{filter:brightness(1.6)}}
+.bigkey.waiting{
+  border-color:#ffcc00!important;
+  animation:keyWait .4s ease-in-out infinite alternate;
+}
+@keyframes keyWait{
+  from{box-shadow:0 0 20px rgba(255,204,0,.6),inset 0 0 20px rgba(255,204,0,.1)}
+  to{box-shadow:0 0 50px rgba(255,204,0,1),inset 0 0 40px rgba(255,204,0,.25)}
+}
+.bigkey.correct{
+  border-color:#39ff14!important;
+  box-shadow:0 0 40px rgba(57,255,20,.9),inset 0 0 30px rgba(57,255,20,.2)!important;
+  filter:brightness(1.7)!important;
+}
 
-/* WHITE keys — anchored top, hang down */
-.wk{
-  position:absolute;top:0;cursor:pointer;z-index:1;
-  border-radius:0 0 8px 8px;
-  background:linear-gradient(180deg,#9ea4c0 0%,#e4e8f5 20%,#cdd2ea 100%);
-  border-left:1px solid rgba(0,0,0,.28);
-  border-bottom:6px solid rgba(0,0,0,.4);
-  box-shadow:inset 0 2px 5px rgba(255,255,255,.55),0 5px 10px rgba(0,0,0,.4);
-  transition:background .04s,box-shadow .04s;
-}
-.wk.pressed{
-  background:linear-gradient(180deg,rgba(0,245,255,.65) 0%,rgba(0,245,255,.25) 100%)!important;
-  box-shadow:0 0 30px rgba(0,245,255,.9),0 0 8px rgba(0,245,255,.5),inset 0 2px 4px rgba(0,0,0,.2)!important;
-  border-bottom-color:rgba(0,245,255,.4)!important;
-}
-.wk.glow{
-  background:linear-gradient(180deg,rgba(80,160,255,.55) 0%,rgba(80,160,255,.2) 100%)!important;
-  box-shadow:0 0 20px rgba(80,160,255,.8),0 0 5px rgba(80,160,255,.4)!important;
-}
-.wk.waiting{
-  background:linear-gradient(180deg,rgba(255,204,0,.75) 0%,rgba(255,204,0,.3) 100%)!important;
-  box-shadow:0 0 30px rgba(255,204,0,1),0 0 8px rgba(255,204,0,.5)!important;
-  animation:kPulse .45s ease-in-out infinite alternate;
-}
-.wk.correct{
-  background:linear-gradient(180deg,rgba(57,255,20,.75) 0%,rgba(57,255,20,.3) 100%)!important;
-  box-shadow:0 0 35px rgba(57,255,20,1)!important;
-}
+/* key color themes per key (1-7) */
+.bigkey:nth-child(1){background:linear-gradient(160deg,#0a1535,#0d1f55);box-shadow:0 4px 20px rgba(30,80,255,.3)}
+.bigkey:nth-child(2){background:linear-gradient(160deg,#0a2a10,#0d4018);box-shadow:0 4px 20px rgba(30,180,60,.3)}
+.bigkey:nth-child(3){background:linear-gradient(160deg,#2a0a15,#4a0d22);box-shadow:0 4px 20px rgba(200,30,80,.3)}
+.bigkey:nth-child(4){background:linear-gradient(160deg,#2a1a00,#4a3000);box-shadow:0 4px 20px rgba(200,140,0,.3)}
+.bigkey:nth-child(5){background:linear-gradient(160deg,#1a0a35,#2d1555);box-shadow:0 4px 20px rgba(140,50,255,.3)}
+.bigkey:nth-child(6){background:linear-gradient(160deg,#2a1200,#4a2200);box-shadow:0 4px 20px rgba(220,100,0,.3)}
+.bigkey:nth-child(7){background:linear-gradient(160deg,#002a2a,#004040);box-shadow:0 4px 20px rgba(0,200,180,.3)}
 
-/* BLACK keys — anchored top, shorter */
-.bk{
-  position:absolute;top:0;cursor:pointer;z-index:2;
-  border-radius:0 0 5px 5px;
-  background:linear-gradient(180deg,#0d0d22 0%,#1a1a30 60%,#252540 100%);
-  border:1px solid rgba(0,0,0,.9);border-top:none;
-  box-shadow:2px 4px 10px rgba(0,0,0,.95),inset 0 1px 2px rgba(255,255,255,.06);
-  transition:background .04s,box-shadow .04s;
-}
-.bk.pressed{
-  background:linear-gradient(180deg,rgba(0,245,255,.65) 0%,rgba(0,245,255,.3) 100%)!important;
-  box-shadow:0 0 20px rgba(0,245,255,.9)!important;
-}
-.bk.glow{
-  background:linear-gradient(180deg,rgba(80,160,255,.6) 0%,rgba(80,160,255,.3) 100%)!important;
-  box-shadow:0 0 16px rgba(80,160,255,.9)!important;
-}
-.bk.waiting{
-  background:linear-gradient(180deg,rgba(255,204,0,.8) 0%,rgba(255,204,0,.4) 100%)!important;
-  box-shadow:0 0 22px rgba(255,204,0,1)!important;
-  animation:kPulse .45s ease-in-out infinite alternate;
-}
-.bk.correct{
-  background:linear-gradient(180deg,rgba(57,255,20,.8) 0%,rgba(57,255,20,.4) 100%)!important;
-  box-shadow:0 0 24px rgba(57,255,20,1)!important;
-}
-@keyframes kPulse{from{filter:brightness(.7)}to{filter:brightness(1.3)}}
-
-.key-lbl{
-  position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
-  font-size:7px;color:rgba(0,0,0,.28);pointer-events:none;font-family:'Rajdhani',sans-serif;
-}
-.bk .key-lbl{color:rgba(255,255,255,.2);bottom:3px}
-
-/* ── PAUSE OVERLAY ── */
+/* Lane note colors matching keys */
+/* ════════════════════════════════
+   OVERLAYS
+════════════════════════════════ */
 #pauseOv{
   display:none;position:absolute;inset:0;background:rgba(3,3,15,.94);z-index:200;
   align-items:center;justify-content:center;flex-direction:column;
   backdrop-filter:blur(18px);
 }
 #pauseOv.show{display:flex}
-.pause-t{
-  font-family:'Orbitron',monospace;font-size:38px;font-weight:900;letter-spacing:8px;
-  color:var(--cyan);text-shadow:0 0 50px var(--cyan),0 0 100px rgba(0,245,255,.3);margin-bottom:6px;
-}
-.pause-sub{font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.22);margin-bottom:34px;text-transform:uppercase;}
-.pause-menu{display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;}
+.pause-t{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;letter-spacing:8px;color:#00f5ff;text-shadow:0 0 50px #00f5ff;margin-bottom:6px}
+.pause-sub{font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.2);margin-bottom:32px}
+.pause-menu{display:flex;flex-direction:column;gap:10px;width:100%;max-width:270px}
 .pmenu-btn{
-  display:flex;align-items:center;gap:14px;border:none;cursor:pointer;border-radius:10px;
-  padding:14px 20px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;transition:all .18s;width:100%;
+  display:flex;align-items:center;gap:13px;border:none;cursor:pointer;border-radius:10px;
+  padding:13px 18px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;transition:all .17s;width:100%;
 }
-.pmenu-btn .pm-icon{font-size:18px;flex-shrink:0}
-.pmenu-btn .pm-txt{flex:1;text-align:left;display:flex;flex-direction:column;gap:2px;}
-.pmenu-btn .pm-hint{font-size:9px;opacity:.38;font-family:'Rajdhani',sans-serif;letter-spacing:1px;font-weight:400;text-transform:none;}
-#pm-resume{background:linear-gradient(135deg,var(--cyan),#007799);color:#000;box-shadow:0 0 26px rgba(0,245,255,.4);}
-#pm-resume:hover{box-shadow:0 0 46px rgba(0,245,255,.7);transform:translateY(-2px)}
-#pm-restart{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;}
-#pm-restart:hover{background:rgba(255,170,0,.12);border-color:rgba(255,170,0,.35);color:var(--gold);}
-#pm-exit{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.42);}
-#pm-exit:hover{background:rgba(255,45,120,.1);border-color:rgba(255,45,120,.3);color:var(--pink);}
+.pmenu-btn .pmi{font-size:17px;flex-shrink:0}
+.pmenu-btn .pmt{flex:1;text-align:left;display:flex;flex-direction:column;gap:2px}
+.pmenu-btn .pmh{font-size:9px;opacity:.35;font-family:'Rajdhani',sans-serif;letter-spacing:1px;font-weight:400;text-transform:none}
+#pm-resume{background:linear-gradient(135deg,#00f5ff,#007799);color:#000;box-shadow:0 0 24px rgba(0,245,255,.4)}
+#pm-resume:hover{box-shadow:0 0 44px rgba(0,245,255,.7);transform:translateY(-2px)}
+#pm-restart{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff}
+#pm-restart:hover{background:rgba(255,170,0,.1);border-color:rgba(255,170,0,.3);color:#ffcc00}
+#pm-exit{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.4)}
+#pm-exit:hover{background:rgba(255,45,120,.09);border-color:rgba(255,45,120,.28);color:#ff2d78}
 
-/* ── COUNTDOWN ── */
 #countdownOv{
   display:none;position:absolute;inset:0;z-index:300;
   align-items:center;justify-content:center;flex-direction:column;gap:10px;
-  background:rgba(3,3,15,.8);backdrop-filter:blur(10px);pointer-events:none;
+  background:rgba(3,3,15,.78);backdrop-filter:blur(10px);pointer-events:none;
 }
 #countdownOv.show{display:flex}
 #cdNum{
-  font-family:'Orbitron',monospace;font-size:clamp(90px,22vw,170px);font-weight:900;
-  color:var(--cyan);text-shadow:0 0 60px var(--cyan),0 0 140px rgba(0,245,255,.35);
+  font-family:'Orbitron',monospace;font-size:clamp(90px,22vw,160px);font-weight:900;
+  color:#00f5ff;text-shadow:0 0 60px #00f5ff,0 0 130px rgba(0,245,255,.3);
 }
-#cdNum.go{color:var(--green);text-shadow:0 0 60px var(--green),0 0 140px rgba(57,255,20,.35);}
-#cdNum.anim{animation:cdPop .85s ease-out forwards;}
-#cdSub{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:7px;color:rgba(255,255,255,.38);text-transform:uppercase;}
-@keyframes cdPop{
-  0%{transform:scale(2.2);opacity:0}25%{opacity:1}65%{transform:scale(.98);opacity:1}100%{transform:scale(.7);opacity:0}
-}
+#cdNum.go{color:#39ff14;text-shadow:0 0 60px #39ff14,0 0 130px rgba(57,255,20,.3)}
+#cdNum.anim{animation:cdPop .85s ease-out forwards}
+@keyframes cdPop{0%{transform:scale(2.2);opacity:0}25%{opacity:1}65%{transform:scale(.98);opacity:1}100%{transform:scale(.7);opacity:0}}
+#cdSub{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:7px;color:rgba(255,255,255,.35)}
 
-/* ── GAME OVER ── */
 #gameOverOv{
   display:none;position:absolute;inset:0;z-index:250;
-  align-items:center;justify-content:center;flex-direction:column;gap:18px;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;
   background:radial-gradient(ellipse at 50% 40%,rgba(140,0,0,.4) 0%,rgba(3,3,15,.96) 70%);
   backdrop-filter:blur(18px);
 }
 #gameOverOv.show{display:flex}
-.go-skull{font-size:70px;animation:goShake .25s ease-in-out 4}
+.go-skull{font-size:64px;animation:goShake .25s ease-in-out 4}
 @keyframes goShake{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
-.go-title{
-  font-family:'Orbitron',monospace;font-size:clamp(30px,8vw,54px);font-weight:900;
-  letter-spacing:4px;color:var(--pink);
-  text-shadow:0 0 40px var(--pink),0 0 80px rgba(255,45,120,.5);
-}
-.go-sub{font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.35);text-transform:uppercase;}
-.go-stats{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;}
-.go-stat-v{font-family:'Orbitron',monospace;font-size:22px;color:var(--gold);text-align:center}
-.go-stat-l{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.28);text-align:center}
-.go-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
-.btn-danger{
-  background:linear-gradient(135deg,#cc0044,#880020);color:#fff;
-  font-size:12px;padding:13px 28px;border-radius:8px;
-  box-shadow:0 0 24px rgba(255,45,120,.45);
-}
-.btn-danger:hover{box-shadow:0 0 44px rgba(255,45,120,.75);transform:translateY(-2px)}
+.go-title{font-family:'Orbitron',monospace;font-size:clamp(28px,8vw,50px);font-weight:900;letter-spacing:4px;color:#ff2d78;text-shadow:0 0 40px #ff2d78}
+.go-stats{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
+.go-sv{font-family:'Orbitron',monospace;font-size:20px;color:#ffcc00;text-align:center}
+.go-sl{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.28);text-align:center}
+.go-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-danger{background:linear-gradient(135deg,#cc0044,#880020);color:#fff;font-size:12px;padding:12px 26px;border-radius:8px;box-shadow:0 0 22px rgba(255,45,120,.4)}
+.btn-danger:hover{box-shadow:0 0 42px rgba(255,45,120,.7);transform:translateY(-2px)}
 
-/* ═══════════════ RESULT SCREEN ═══════════════ */
+/* Result */
 #resultScreen{
-  align-items:center;justify-content:center;gap:16px;padding:24px 18px;
-  background:
-    radial-gradient(ellipse 70% 50% at 50% 0%,rgba(0,80,255,.14) 0%,transparent 60%),
-    var(--bg);
+  align-items:center;justify-content:center;gap:14px;padding:22px 16px;
+  background:radial-gradient(ellipse 65% 45% at 50% 0%,rgba(0,80,255,.13) 0%,transparent 55%),#05050e;
 }
-.res-emoji{font-size:52px}
-.res-grade{
-  font-family:'Orbitron',monospace;font-size:74px;font-weight:900;
-  background:linear-gradient(135deg,var(--gold),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 0 28px rgba(255,204,0,.5));
-}
-.res-lbl{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.26);text-transform:uppercase}
-.stats-g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:460px}
-.stat-c{
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-  border-radius:10px;padding:12px;text-align:center;
-}
-.stat-v{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--cyan)}
-.stat-l{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.28);margin-top:3px}
+.res-emoji{font-size:50px}
+.res-grade{font-family:'Orbitron',monospace;font-size:72px;font-weight:900;background:linear-gradient(135deg,#ffcc00,#00f5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 26px rgba(255,204,0,.5))}
+.stats-g{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;max-width:440px}
+.stat-c{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;text-align:center}
+.stat-v{font-family:'Orbitron',monospace;font-size:19px;font-weight:700;color:#00f5ff}
+.stat-l{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.26);margin-top:3px}
 
 /* particles */
 .prt{position:absolute;pointer-events:none;border-radius:50%;animation:pBurst .7s ease-out forwards}
 @keyframes pBurst{to{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
-
-/* rotate hint */
-#rotHint{display:none;position:fixed;inset:0;background:#05050e;z-index:999;
-  align-items:center;justify-content:center;flex-direction:column;gap:20px;text-align:center;padding:40px;}
-.rot-ico{font-size:60px;animation:rotA 1.5s ease-in-out infinite}
-@keyframes rotA{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
 </style>
 </head>
 <body>
-<div id="rotHint">
-  <div class="rot-ico">📱</div>
-  <div style="font-family:Orbitron,monospace;font-size:18px;color:#00f5ff;letter-spacing:3px">GIRA A HORIZONTAL</div>
-  <div style="color:rgba(255,255,255,.3);font-size:13px">Mejor experiencia en landscape</div>
-  <button class="btn btn-out" onclick="document.getElementById('rotHint').style.display='none'">Continuar</button>
-</div>
 
-<!-- ═══════ HOME ═══════ -->
+<!-- ═══ HOME ═══ -->
 <div id="homeScreen" class="screen active">
-  <div class="logo-wrap">
-    <div class="logo-main">PIANO HERO</div>
-    <div class="logo-piano">Rock the keys</div>
-  </div>
-  <!-- decorative keyboard -->
-  <div class="home-keys" id="homeKeys"></div>
+  <div class="logo-main">PIANO HERO</div>
+  <div class="logo-sub">Rock the keys</div>
+
+  <div class="home-keys-preview" id="homePreview"></div>
 
   <div class="upload-zone" id="uploadZone">
-    <div class="ico">🎵</div>
+    <div class="icz">🎵</div>
     <p><strong>Arrastra un archivo MIDI aquí</strong></p>
     <p>o toca para seleccionar · .mid / .midi</p>
     <input type="file" id="fileInput" accept=".mid,.midi">
@@ -448,9 +372,8 @@ input[type=range]::-webkit-slider-thumb{
     <div class="mode-row">
       <button class="mode-btn on" id="mStrict" onclick="setMode('strict')">🎮 ESTRICTO</button>
       <button class="mode-btn"   id="mRelax"  onclick="setMode('relax')">🎵 RELAJADO</button>
-      <button class="mode-btn"   id="mFree"   onclick="setMode('free')">🎹 LIBRE</button>
     </div>
-    <div class="mode-desc" id="mDesc" style="margin-top:8px">La música espera hasta que toques las notas correctas</div>
+    <div class="mode-desc" id="mDesc" style="margin-top:8px">La música espera hasta que toques el grupo correcto</div>
   </div>
 
   <div class="ctrl-row">
@@ -465,24 +388,15 @@ input[type=range]::-webkit-slider-thumb{
   </div>
 </div>
 
-<!-- ═══════ GAME ═══════ -->
+<!-- ═══ GAME ═══ -->
 <div id="gameScreen" class="screen">
   <div id="hud">
-    <div class="hud-b">
-      <div class="hud-lbl">Score</div>
-      <div class="hud-v" id="scoreV">0</div>
-    </div>
+    <div class="hud-b"><div class="hud-lbl">Score</div><div class="hud-v" id="scoreV">0</div></div>
     <div id="healthWrap">
-      <div id="healthTop">
-        <span id="healthLbl">♥ VIDA</span>
-        <span id="healthPct">100%</span>
-      </div>
+      <div id="healthTop"><span id="healthLbl">♥ VIDA</span><span id="healthPct">100%</span></div>
       <div id="healthTrack"><div id="healthFill"></div></div>
     </div>
-    <div class="hud-b">
-      <div class="hud-lbl">Combo</div>
-      <div class="hud-v" id="comboV">×0</div>
-    </div>
+    <div class="hud-b"><div class="hud-lbl">Combo</div><div class="hud-v" id="comboV">×0</div></div>
     <div class="hud-center">
       <div id="songTitleH">—</div>
       <div id="progBar"><div id="progFill"></div></div>
@@ -490,70 +404,57 @@ input[type=range]::-webkit-slider-thumb{
     <button id="btnPause">⏸ PAUSA</button>
   </div>
 
-  <div id="waitBar"><div id="waitText">⏸ TOCA LAS TECLAS DORADAS</div></div>
+  <div id="waitBar"><div id="waitText">⏸ TOCA EL GRUPO DORADO</div></div>
 
-  <!-- Stage: Guitar Hero 3D highway (all drawn on single canvas) -->
   <div id="stageWrap">
     <canvas id="laneCanvas"></canvas>
     <div id="feedback"></div>
     <div id="flash"></div>
   </div>
 
-  <!-- Inverted piano keyboard -->
+  <!-- 7 BIG KEYS -->
   <div id="pianoWrapper">
-    <div id="pianoScroll"><div id="keyboard"></div></div>
+    <div id="keysRow"></div>
   </div>
 
-  <!-- Pause -->
+  <!-- Overlays -->
   <div id="pauseOv">
     <div class="pause-t">PAUSA</div>
     <div class="pause-sub">Juego detenido</div>
     <div class="pause-menu">
-      <button class="pmenu-btn" id="pm-resume">
-        <span class="pm-icon">▶</span>
-        <span class="pm-txt"><span class="pm-lbl">Continuar</span><span class="pm-hint">Sigue donde lo dejaste</span></span>
-      </button>
-      <button class="pmenu-btn" id="pm-restart">
-        <span class="pm-icon">🔄</span>
-        <span class="pm-txt"><span class="pm-lbl">Reiniciar</span><span class="pm-hint">Empieza desde el principio</span></span>
-      </button>
-      <button class="pmenu-btn" id="pm-exit">
-        <span class="pm-icon">🏠</span>
-        <span class="pm-txt"><span class="pm-lbl">Salir al menú</span><span class="pm-hint">Perderás el progreso</span></span>
-      </button>
+      <button class="pmenu-btn" id="pm-resume"><span class="pmi">▶</span><span class="pmt"><span>Continuar</span><span class="pmh">Sigue donde lo dejaste</span></span></button>
+      <button class="pmenu-btn" id="pm-restart"><span class="pmi">🔄</span><span class="pmt"><span>Reiniciar</span><span class="pmh">Empieza desde el principio</span></span></button>
+      <button class="pmenu-btn" id="pm-exit"><span class="pmi">🏠</span><span class="pmt"><span>Salir al menú</span><span class="pmh">Perderás el progreso</span></span></button>
     </div>
   </div>
 
-  <!-- Game Over -->
   <div id="gameOverOv">
     <div class="go-skull">💀</div>
     <div class="go-title">GAME OVER</div>
-    <div class="go-sub">Se acabó la vida</div>
     <div class="go-stats">
-      <div class="go-stat"><div class="go-stat-v" id="goScore">0</div><div class="go-stat-l">PUNTAJE</div></div>
-      <div class="go-stat"><div class="go-stat-v" id="goCombo">0</div><div class="go-stat-l">MAX COMBO</div></div>
-      <div class="go-stat"><div class="go-stat-v" id="goAcc">0%</div><div class="go-stat-l">PRECISIÓN</div></div>
+      <div><div class="go-sv" id="goScore">0</div><div class="go-sl">PUNTAJE</div></div>
+      <div><div class="go-sv" id="goCombo">0</div><div class="go-sl">MAX COMBO</div></div>
+      <div><div class="go-sv" id="goAcc">0%</div><div class="go-sl">PRECISIÓN</div></div>
     </div>
     <div class="go-btns">
       <button class="btn btn-danger" id="goRetry">🔄 REINTENTAR</button>
-      <button class="btn btn-out" id="goMenu">🏠 MENÚ</button>
+      <button class="btn btn-out"    id="goMenu">🏠 MENÚ</button>
     </div>
   </div>
 
-  <!-- Countdown -->
   <div id="countdownOv">
     <div id="cdNum">3</div>
     <div id="cdSub">prepárate…</div>
   </div>
 </div>
 
-<!-- ═══════ RESULT ═══════ -->
+<!-- ═══ RESULT ═══ -->
 <div id="resultScreen" class="screen">
   <div class="res-emoji" id="resE">🏆</div>
   <div class="res-grade" id="resG">S</div>
-  <div class="res-lbl">RESULTADO FINAL</div>
+  <div class="res-lbl" style="font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.25)">RESULTADO FINAL</div>
   <div class="stats-g">
-    <div class="stat-c"><div class="stat-v" id="rH">0</div><div class="stat-l">PERFECTAS</div></div>
+    <div class="stat-c"><div class="stat-v" id="rH">0</div><div class="stat-l">ACIERTOS</div></div>
     <div class="stat-c"><div class="stat-v" id="rM" style="color:#ff2d78">0</div><div class="stat-l">FALLADAS</div></div>
     <div class="stat-c"><div class="stat-v" id="rC" style="color:#ffcc00">0</div><div class="stat-l">MAX COMBO</div></div>
     <div class="stat-c"><div class="stat-v" id="rA">0%</div><div class="stat-l">PRECISIÓN</div></div>
@@ -570,6 +471,39 @@ input[type=range]::-webkit-slider-thumb{
 'use strict';
 
 // ═══════════════════════════════════════════════════
+//  7-KEY MAPPING
+//  Groups all 88 piano notes into 7 buckets by octave
+// ═══════════════════════════════════════════════════
+/*
+  Key  Octave   MIDI range    Label    Color
+  1    1        21–35  A0-B1   DO1     blue
+  2    2        36–47  C2-B2   DO2     green
+  3    3        48–59  C3-B3   DO3     red
+  4    4        60–71  C4-B4   DO4     gold   ← middle C
+  5    5        72–83  C5-B5   DO5     purple
+  6    6        84–95  C6-B6   DO6     orange
+  7    7        96–108 C7-C8   DO7     teal
+*/
+const KEY_GROUPS=[
+  {lo:21,hi:35,label:'1',note:'DO₁',color:'#1a6aff',glow:'rgba(30,100,255,.9)',hi2:'#5596ff'},
+  {lo:36,hi:47,label:'2',note:'DO₂',color:'#1fc71f',glow:'rgba(30,200,60,.9)', hi2:'#50ff50'},
+  {lo:48,hi:59,label:'3',note:'DO₃',color:'#cc1a50',glow:'rgba(220,30,80,.9)', hi2:'#ff4488'},
+  {lo:60,hi:71,label:'4',note:'DO₄',color:'#cc8800',glow:'rgba(200,140,0,.9)', hi2:'#ffcc00'},
+  {lo:72,hi:83,label:'5',note:'DO₅',color:'#7722ee',glow:'rgba(130,40,240,.9)',hi2:'#aa55ff'},
+  {lo:84,hi:95,label:'6',note:'DO₆',color:'#cc5500',glow:'rgba(210,90,0,.9)',  hi2:'#ff8833'},
+  {lo:96,hi:108,label:'7',note:'DO₇',color:'#009988',glow:'rgba(0,180,160,.9)',hi2:'#00ddcc'},
+];
+
+function midiToGroup(midi){
+  for(let i=0;i<KEY_GROUPS.length;i++){
+    if(midi>=KEY_GROUPS[i].lo&&midi<=KEY_GROUPS[i].hi) return i;
+  }
+  // clamp extremes
+  if(midi<21) return 0;
+  return 6;
+}
+
+// ═══════════════════════════════════════════════════
 //  MIDI PARSER
 // ═══════════════════════════════════════════════════
 class MP{
@@ -584,8 +518,7 @@ class MP{
   skip(n){if(n>0)this.p=Math.min(this.len,this.p+n)}
   parse(){
     this.p=0;
-    const hdr=this.str(4);
-    if(hdr!=='MThd')throw new Error('No es MIDI válido');
+    if(this.str(4)!=='MThd')throw new Error('No es MIDI válido');
     const hl=this.u32(),fmt=this.u16(),nt=this.u16(),div=this.u16();
     if(hl>6)this.skip(hl-6);
     const tracks=[];
@@ -644,13 +577,14 @@ function parseMidi(buf){
       if(e.type==='on'){act[e.note]=e.tick}
       else if(e.type==='off'&&act[e.note]!=null){
         const s=t2ms(act[e.note]),en=t2ms(e.tick);
-        if(en>s&&s>=0&&isFinite(s)&&isFinite(en))notes.push({note:e.note,startMs:s,endMs:en,dur:en-s,track:ti});
+        if(en>s&&s>=0&&isFinite(s)&&isFinite(en))
+          notes.push({note:e.note,startMs:s,endMs:en,dur:en-s,group:midiToGroup(e.note)});
         delete act[e.note];
       }
     });
     Object.entries(act).forEach(([n,tk])=>{
       const s=t2ms(+tk);
-      if(s>=0&&isFinite(s))notes.push({note:+n,startMs:s,endMs:s+280,dur:280,track:ti});
+      if(s>=0&&isFinite(s))notes.push({note:+n,startMs:s,endMs:s+280,dur:280,group:midiToGroup(+n)});
     });
   });
   if(!notes.length)throw new Error('El MIDI no contiene notas');
@@ -659,11 +593,11 @@ function parseMidi(buf){
 }
 
 // ═══════════════════════════════════════════════════
-//  AUDIO — Grand Piano (Karplus-Strong physical model)
+//  GRAND PIANO AUDIO — Physical model + hold/release
 // ═══════════════════════════════════════════════════
-let actx=null;
-// Reverb impulse cache
-let reverbNode=null;
+let actx=null, reverbNode=null;
+// Active held notes: midi -> {gain, oscs}
+const activeNotes={};
 
 function getAudio(){
   if(!actx){
@@ -674,714 +608,450 @@ function getAudio(){
   return actx;
 }
 
-// Simple convolution reverb (concert hall feel)
 function buildReverb(){
   const ctx=actx;
   reverbNode=ctx.createConvolver();
-  // Build an impulse response: exponentially decaying noise
-  const SR=ctx.sampleRate;
-  const len=SR*2.2; // 2.2s reverb tail
+  const SR=ctx.sampleRate,len=Math.floor(SR*2.0);
   const buf=ctx.createBuffer(2,len,SR);
   for(let ch=0;ch<2;ch++){
     const d=buf.getChannelData(ch);
     for(let i=0;i<len;i++){
-      // Early reflections + diffuse tail
       const t=i/SR;
-      const er = t<0.05 ? (Math.random()*2-1)*Math.exp(-t*40) : 0;
-      const tail= (Math.random()*2-1)*Math.exp(-t*2.8);
-      d[i]=(er*0.4+tail*0.6);
+      d[i]=(Math.random()*2-1)*(Math.exp(-t*3.2)+(t<0.04?(Math.random()*2-1)*Math.exp(-t*45)*0.5:0));
     }
   }
   reverbNode.buffer=buf;
-  // Reverb output gain (wet)
-  const rvGain=ctx.createGain();rvGain.gain.value=0.18;
+  const rvGain=ctx.createGain();rvGain.gain.value=0.16;
   reverbNode.connect(rvGain);rvGain.connect(ctx.destination);
 }
 
-/*
-  Grand Piano synthesis strategy:
-  ────────────────────────────────
-  1. Karplus-Strong string model:
-     - Fill a delay buffer with filtered noise (the "hammer strike")
-     - Feedback through a one-pole lowpass filter = string resonance
-     We approximate this with Web Audio using:
-       OscillatorNode (for fundamental + harmonics)
-     + carefully shaped ADSR (fast attack, slow long decay like a piano string)
-     + highpass on low notes, lowpass on high notes (string brightness)
-     + slight inharmonicity (BiquadFilter detune) per harmonic
-     + stereo spread (slightly different timing L vs R)
-     + hall reverb (convolver above)
-
-  2. Three harmonic layers:
-     - Fundamental (sine, full vol)
-     - 2nd harmonic (sine, lower vol, slight detune = inharmonicity)
-     - 4th harmonic (triangle, more detune)
-     - "Thump" layer: short burst at attack (hammer felt hit)
-*/
-function playNoteAudio(midi, dur=1.4, vel=0.78){
+// Start a note — keeps playing until stopNote() called
+function startNote(midi, vel=0.75){
+  if(activeNotes[midi])return; // already playing
   const ctx=getAudio();
-  if(!reverbNode)buildReverb();
   const freq=440*Math.pow(2,(midi-69)/12);
   const now=ctx.currentTime;
+  const octave=(midi-21)/88;
 
-  // Map midi range to tonal character
-  const octave=(midi-21)/88; // 0=lowest, 1=highest
-  // Low notes: longer decay, more body; High notes: shorter, brighter
-  const decayTime = dur * (0.5 + (1-octave)*2.5); // 0.5s high → 3s low
-  const brightness = 0.3 + octave*0.65; // brightness factor
+  const master=ctx.createGain();
+  master.connect(ctx.destination);
+  if(reverbNode)master.connect(reverbNode);
+  // Attack
+  master.gain.setValueAtTime(0,now);
+  master.gain.linearRampToValueAtTime(vel*0.3,now+0.004);
+  master.gain.exponentialRampToValueAtTime(vel*0.12,now+0.08);
+  // Hold at sustain level indefinitely (will fade on stopNote)
 
-  // Master output (dry)
-  const masterGain=ctx.createGain();
-  masterGain.connect(ctx.destination);
-  if(reverbNode) masterGain.connect(reverbNode);
-
-  // ADSR envelope — piano-like
-  const atk=0.003;          // ~3ms hammer strike
-  const dec=0.06+octave*0.1;// decay to sustain level
-  const susLvl=vel*0.12;    // low sustain (piano strings ring but don't hold)
-  const rel=decayTime;      // long release = string sustain
-
-  masterGain.gain.setValueAtTime(0,now);
-  masterGain.gain.linearRampToValueAtTime(vel*0.32, now+atk);
-  masterGain.gain.exponentialRampToValueAtTime(susLvl, now+atk+dec);
-  masterGain.gain.exponentialRampToValueAtTime(0.0001, now+atk+dec+rel);
-
-  // Tonal shaping filter
   const tone=ctx.createBiquadFilter();
   tone.type='lowpass';
-  // Cutoff: low notes are warmer (lower cutoff), high notes brighter
-  tone.frequency.value = 800 + octave*8000;
-  tone.Q.value = 0.7;
-  tone.connect(masterGain);
+  tone.frequency.value=900+octave*7000;
+  tone.Q.value=0.6;
+  tone.connect(master);
 
-  // Inharmonicity constant — higher strings are less inharmonic
-  const B = 0.00015 * Math.pow(2, (midi-69)/12 * 0.5);
-
-  // Harmonic series with inharmonicity
+  const B=0.00015*Math.pow(2,(midi-69)/12*0.5);
   const harmonics=[
-    {n:1, vol:1.0,   type:'sine'},
-    {n:2, vol:0.38,  type:'sine'},
-    {n:3, vol:0.18,  type:'sine'},
-    {n:4, vol:0.10,  type:'triangle'},
-    {n:6, vol:0.05,  type:'sine'},
-    {n:8, vol:0.025, type:'sine'},
+    {n:1,vol:1.0,type:'sine'},
+    {n:2,vol:0.35,type:'sine'},
+    {n:3,vol:0.16,type:'sine'},
+    {n:4,vol:0.09,type:'triangle'},
+    {n:6,vol:0.04,type:'sine'},
   ];
-
+  const oscs=[];
   harmonics.forEach(h=>{
-    // Inharmonic frequency: fn = n*f0 * sqrt(1 + B*n^2)
-    const fInharm = freq * h.n * Math.sqrt(1 + B * h.n * h.n);
-    // Each harmonic decays faster (higher harmonics = shorter)
-    const hDecay = (atk+dec+rel) / Math.pow(h.n, 0.55);
-
-    const osc=ctx.createOscillator();
-    osc.type=h.type;
-    osc.frequency.value=fInharm;
-
-    const hGain=ctx.createGain();
-    hGain.gain.setValueAtTime(h.vol, now);
-    hGain.gain.exponentialRampToValueAtTime(0.001, now+Math.max(0.1,hDecay));
-
-    osc.connect(hGain);hGain.connect(tone);
+    const f=freq*h.n*Math.sqrt(1+B*h.n*h.n);
+    const osc=ctx.createOscillator();osc.type=h.type;osc.frequency.value=f;
+    const g=ctx.createGain();g.gain.value=h.vol;
+    osc.connect(g);g.connect(tone);
     osc.start(now);
-    osc.stop(now+Math.max(0.15, hDecay)+0.05);
+    oscs.push(osc);
   });
 
-  // ── Hammer "thump" — adds the percussive attack body ──
-  // Short burst of noise shaped to sound like felt hammer
-  const thumpDur=0.025+octave*0.01;
-  const noiseBuffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*thumpDur),ctx.sampleRate);
-  const nd=noiseBuffer.getChannelData(0);
-  for(let i=0;i<nd.length;i++) nd[i]=(Math.random()*2-1)*Math.exp(-i/nd.length*12);
-  const noiseSource=ctx.createBufferSource();
-  noiseSource.buffer=noiseBuffer;
+  // Hammer thump
+  const tDur=0.022+octave*0.01;
+  const nb=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*tDur),ctx.sampleRate);
+  const nd=nb.getChannelData(0);
+  for(let i=0;i<nd.length;i++)nd[i]=(Math.random()*2-1)*Math.exp(-i/nd.length*12);
+  const ns=ctx.createBufferSource();ns.buffer=nb;
+  const nf=ctx.createBiquadFilter();nf.type='bandpass';nf.frequency.value=freq*2;nf.Q.value=1.2;
+  const ng=ctx.createGain();ng.gain.setValueAtTime(vel*(0.07+octave*0.04),now);
+  ng.gain.exponentialRampToValueAtTime(0.001,now+tDur);
+  ns.connect(nf);nf.connect(ng);ng.connect(master);
+  ns.start(now);ns.stop(now+tDur+0.01);
 
-  // Band-pass filter centered on fundamental (gives the "boxy" hammer sound)
-  const nFilt=ctx.createBiquadFilter();
-  nFilt.type='bandpass';
-  nFilt.frequency.value=freq*(1.5+octave*2);
-  nFilt.Q.value=1.2;
-
-  const nGain=ctx.createGain();
-  nGain.gain.setValueAtTime(vel*(0.08+octave*0.04), now);
-  nGain.gain.exponentialRampToValueAtTime(0.001, now+thumpDur);
-
-  noiseSource.connect(nFilt);nFilt.connect(nGain);nGain.connect(masterGain);
-  noiseSource.start(now);noiseSource.stop(now+thumpDur+0.01);
-
-  // ── String sympathetic resonance (subtle chorus on the body) ──
-  // Two slightly detuned versions pan L/R for stereo width
-  [-0.0008, +0.0008].forEach((detune,i)=>{
-    const osc2=ctx.createOscillator();
-    osc2.type='sine';
-    osc2.frequency.value=freq*(1+detune);
-    const panner=ctx.createStereoPanner();
-    panner.pan.value = i===0 ? -0.35 : 0.35;
-    const rGain=ctx.createGain();
-    rGain.gain.setValueAtTime(vel*0.04,now);
-    rGain.gain.exponentialRampToValueAtTime(0.001,now+rel*0.7);
-    osc2.connect(rGain);rGain.connect(panner);panner.connect(masterGain);
-    osc2.start(now);osc2.stop(now+rel*0.7+0.05);
+  // Stereo width
+  [-0.0008,0.0008].forEach((d,i)=>{
+    const o=ctx.createOscillator();o.type='sine';o.frequency.value=freq*(1+d);
+    const pan=ctx.createStereoPanner();pan.pan.value=i?0.3:-0.3;
+    const g=ctx.createGain();g.gain.value=vel*0.04;
+    o.connect(g);g.connect(pan);pan.connect(master);
+    o.start(now);
+    oscs.push(o);
   });
+
+  activeNotes[midi]={master,oscs};
+}
+
+// Stop a note with a short release
+function stopNote(midi){
+  const an=activeNotes[midi];
+  if(!an)return;
+  delete activeNotes[midi];
+  const ctx=getAudio();
+  const now=ctx.currentTime;
+  const rel=0.25;
+  an.master.gain.cancelScheduledValues(now);
+  an.master.gain.setValueAtTime(an.master.gain.value||0.05,now);
+  an.master.gain.exponentialRampToValueAtTime(0.001,now+rel);
+  an.oscs.forEach(o=>{try{o.stop(now+rel+0.05)}catch(e){}});
+}
+
+// Stop all active notes
+function stopAllNotes(){
+  Object.keys(activeNotes).forEach(m=>stopNote(+m));
+}
+
+// Play a quick preview note (auto-released)
+function previewNote(midi,dur=0.6){
+  startNote(midi,0.65);
+  setTimeout(()=>stopNote(midi),dur*1000);
 }
 
 // ═══════════════════════════════════════════════════
-//  PIANO KEYBOARD  (inverted: black keys on top)
+//  BUILD 7 BIG KEYS
 // ═══════════════════════════════════════════════════
-const START=21,TOTAL=88;
-function isBlack(m){return[1,3,6,8,10].includes(m%12)}
-let keyEls={},wMap={},WW=36,PH=0,WH=0,BW=0,BH=0;
+let keyEls={}; // group index -> DOM element
+let pianoH=0;
 
 function buildPiano(){
-  const kb=document.getElementById('keyboard');
-  kb.innerHTML='';keyEls={};wMap={};
+  const row=document.getElementById('keysRow');
+  row.innerHTML='';keyEls={};
   const landscape=window.innerWidth>window.innerHeight;
-  PH=landscape?220:190;
-  document.getElementById('pianoWrapper').style.height=PH+'px';
-  WW=Math.max(34,Math.min(62,window.innerWidth/38));
-  WH=PH-4;
-  BW=WW*0.62;BH=WH*0.56;
-  kb.style.height=PH+'px';
-  let wx=0;
-  for(let m=START;m<START+TOTAL;m++){if(!isBlack(m)){wMap[m]=wx*WW;wx++;}}
-  kb.style.width=(wx*WW)+'px';
-  // whites
-  for(let m=START;m<START+TOTAL;m++){
-    if(isBlack(m))continue;
+  pianoH=landscape?160:140;
+  document.getElementById('pianoWrapper').style.height=(pianoH+22)+'px';
+  row.style.height=pianoH+'px';
+
+  KEY_GROUPS.forEach((kg,i)=>{
     const el=document.createElement('div');
-    el.className='wk';
-    el.style.cssText=`width:${WW-1}px;height:${WH}px;left:${wMap[m]}px;top:0`;
-    el.dataset.midi=m;
-    if(m%12===0){const l=document.createElement('div');l.className='key-lbl';l.textContent='C'+(Math.floor(m/12)-1);el.appendChild(l)}
-    bindKey(el,m);kb.appendChild(el);keyEls[m]=el;
-  }
-  // blacks
-  for(let m=START;m<START+TOTAL;m++){
-    if(!isBlack(m))continue;
-    let pv=-1;for(let x=m-1;x>=START;x--){if(!isBlack(x)){pv=x;break}}
-    let nx=-1;for(let x=m+1;x<START+TOTAL;x++){if(!isBlack(x)){nx=x;break}}
-    if(pv<0||nx<0)continue;
-    const lx=wMap[pv]+WW-BW/2;
-    const el=document.createElement('div');el.className='bk';
-    el.style.cssText=`width:${BW}px;height:${BH}px;left:${lx}px;top:0`;
-    el.dataset.midi=m;
-    bindKey(el,m);kb.appendChild(el);keyEls[m]=el;
-  }
-  setTimeout(()=>{document.getElementById('pianoScroll').scrollLeft=(wMap[60]||0)-window.innerWidth/2;},60);
+    el.className='bigkey';
+    el.innerHTML=`<div class="key-num">${kg.label}</div><div class="key-note">${kg.note}</div>`;
+    el.style.borderColor=kg.color+'44';
+
+    let held=false;
+    const dn=e=>{
+      e.preventDefault();
+      if(held)return;held=true;
+      getAudio();
+      // Play the representative note of this group (middle of range)
+      const midNote=Math.round((kg.lo+kg.hi)/2);
+      startNote(midNote,0.75);
+      el.classList.add('pressed');
+      handleInput(i);
+    };
+    const up=e=>{
+      e.preventDefault();
+      held=false;
+      const midNote=Math.round((kg.lo+kg.hi)/2);
+      stopNote(midNote);
+      el.classList.remove('pressed');
+    };
+    el.addEventListener('touchstart',dn,{passive:false});
+    el.addEventListener('touchend',up,{passive:false});
+    el.addEventListener('touchcancel',up,{passive:false});
+    el.addEventListener('mousedown',dn);
+    el.addEventListener('mouseup',up);
+    el.addEventListener('mouseleave',e=>{if(held){held=false;const mn=Math.round((kg.lo+kg.hi)/2);stopNote(mn);el.classList.remove('pressed');}});
+
+    row.appendChild(el);
+    keyEls[i]=el;
+  });
 }
 
-function bindKey(el,midi){
-  let held=false;
-  const dn=e=>{e.preventDefault();if(held)return;held=true;getAudio();playNoteAudio(midi,.85,.72);el.classList.add('pressed');handleInput(midi)};
-  const up=e=>{e.preventDefault();held=false;el.classList.remove('pressed')};
-  el.addEventListener('touchstart',dn,{passive:false});
-  el.addEventListener('touchend',up,{passive:false});
-  el.addEventListener('touchcancel',up,{passive:false});
-  el.addEventListener('mousedown',dn);
-  el.addEventListener('mouseup',up);
-  el.addEventListener('mouseleave',up);
-}
-
-function setKS(midi,state){
-  const el=keyEls[midi];if(!el)return;
+function setKS(group,state){
+  const el=keyEls[group];if(!el)return;
   el.classList.remove('waiting','correct','glow','pressed');
   if(state)el.classList.add(state);
 }
-function getKeyX(midi){
-  if(!isBlack(midi))return(wMap[midi]??0)+WW/2;
-  const el=keyEls[midi];return el?parseFloat(el.style.left)+parseFloat(el.style.width)/2:0;
+
+// X center of key i on screen
+function keyScreenX(groupIdx){
+  const el=keyEls[groupIdx];
+  if(!el)return stageW/2;
+  const r=el.getBoundingClientRect();
+  return r.left+r.width/2;
+}
+// Width of key
+function keyScreenW(groupIdx){
+  const el=keyEls[groupIdx];
+  if(!el)return stageW/7;
+  return el.getBoundingClientRect().width;
 }
 
 // ═══════════════════════════════════════════════════
+//  STAGE / PERSPECTIVE RENDERER (7 lanes)
 // ═══════════════════════════════════════════════════
-//  GUITAR HERO PERSPECTIVE STAGE RENDERER
-// ═══════════════════════════════════════════════════
-/*
-  TRUE 3D PERSPECTIVE — like Guitar Hero / Rock Band
-  ─────────────────────────────────────────────────
-  - One canvas fills the entire stageWrap
-  - The "highway" is a trapezoid: narrow at top (vanishing point), wide at bottom
-  - The visible piano key range defines the lane width at the bottom
-  - Notes are blocks that start tiny at the top and grow as they approach
-  - Hit zone is at the BOTTOM of the canvas, matching the piano keys
-  - Each note's X position maps to its piano key column via perspective projection
-
-  COORDINATE SYSTEM
-  ─────────────────
-  VP = vanishing point  (cx, vpY)   — somewhere above the canvas top
-  HIT_Y = bottom hit line            — near the canvas bottom
-  
-  For any "song time" offset t (ms until the note hits):
-    p = t / LOOKAHEAD_MS            — 0 = at hit zone, 1 = at vanishing point
-    screenY = mix(HIT_Y, vpY, p)    — lerp
-    screenX = mix(noteKeyX, cx, p)  — converge to center
-    width   = mix(keyW, 0, p)       — shrink to zero at VP
-
-  This gives perfect perspective without any CSS 3D transforms.
-*/
-
-let laneCanvas, lctx;
-let stageW=0, stageH=0;
-
-// ── Note color palette (6 colors cycling by track) ──
-const NOTE_COLORS=[
-  {hi:'#66aaff',mid:'#1155ee',lo:'#0033aa',glow:'rgba(80,140,255,.9)'},
-  {hi:'#66ff88',mid:'#11bb33',lo:'#006622',glow:'rgba(60,220,90,.9)'},
-  {hi:'#ff6699',mid:'#ee1144',lo:'#880022',glow:'rgba(255,60,100,.9)'},
-  {hi:'#ffee66',mid:'#ddaa00',lo:'#886600',glow:'rgba(255,210,50,.9)'},
-  {hi:'#cc88ff',mid:'#8822ee',lo:'#440088',glow:'rgba(180,80,255,.9)'},
-  {hi:'#ff9944',mid:'#ee5500',lo:'#882200',glow:'rgba(255,120,50,.9)'},
-];
-
-// How far ahead (in ms) the highway shows
-const LOOKAHEAD_MS = 3000;
+let laneCanvas,lctx,stageW=0,stageH=0;
+const LOOKAHEAD_MS=3200;
 
 function initCanvas(){
   laneCanvas=document.getElementById('laneCanvas');
   lctx=laneCanvas.getContext('2d');
   resizeCvs();
 }
-
 function resizeCvs(){
   const sw=document.getElementById('stageWrap');
   stageW=sw.clientWidth||window.innerWidth;
   stageH=sw.clientHeight||300;
-  laneCanvas.width=stageW;
-  laneCanvas.height=stageH;
+  laneCanvas.width=stageW;laneCanvas.height=stageH;
 }
 
-// Vanishing point Y — sits above the canvas to create depth illusion
-function getVPY(){ return -stageH * 0.15; }
-// Hit line Y (slightly above canvas bottom)
-function getHitY(){ return stageH * 0.92; }
-// Center X of screen
-function getCX(){ return stageW * 0.5; }
+function getVPY(){return -stageH*0.12;}
+function getHitY(){return stageH*0.90;}
+function getCX(){return stageW*0.5;}
 
-// Piano scroll offset
-function getScroll(){ return document.getElementById('pianoScroll').scrollLeft; }
-
-// Physical X center of a key on the piano strip (in screen coords after scroll)
-function keyPhysX(midi){
-  if(!isBlack(midi)) return (wMap[midi]??0) + WW/2 - getScroll();
-  const el=keyEls[midi];
-  return el ? parseFloat(el.style.left)+BW/2 - getScroll() : getCX();
-}
-// Physical width of a key
-function keyPhysW(midi){ return isBlack(midi) ? BW : WW; }
-
-// ── Perspective projection ──
-// t_ms = ms until note hits (0 = at hit line, LOOKAHEAD_MS = at vanishing point)
-// returns {x, y, w, alpha}
-function project(midi, t_ms){
-  const p  = Math.max(0, Math.min(1, t_ms / LOOKAHEAD_MS));
-  const vp = getVPY(), hy = getHitY(), cx = getCX();
-  const kx = keyPhysX(midi);
-  const kw = keyPhysW(midi);
-
-  // ease the perspective curve slightly so notes don't disappear too fast at top
-  const pe = Math.pow(p, 0.75);
-
-  const y = hy + (vp - hy) * pe;
-  const x = kx + (cx - kx) * pe;
-  const w = kw * (1 - pe * 0.92);          // at VP width is ~8% of key width
-
-  return { x, y, w, p: pe };
+// Project a note (group index + time) to screen coords
+function project(groupIdx, t_ms){
+  const p=Math.max(0,Math.min(1,t_ms/LOOKAHEAD_MS));
+  const pe=Math.pow(p,0.72); // ease for natural perspective
+  const vpy=getVPY(),hy=getHitY(),cx=getCX();
+  const kx=keyScreenX(groupIdx);
+  const kw=keyScreenW(groupIdx);
+  return{
+    x: kx+(cx-kx)*pe,
+    y: hy+(vpy-hy)*pe,
+    w: Math.max(2,kw*(1-pe*0.93)),
+    p:pe
+  };
 }
 
-// ── MAIN DRAW ──
 function drawStage(){
-  if(!lctx) return;
-  lctx.clearRect(0, 0, stageW, stageH);
-
-  const t = performance.now() * 0.001;
-
-  // 1. Background
-  drawBackground(t);
-
-  // 2. Highway (perspective lane)
+  if(!lctx)return;
+  lctx.clearRect(0,0,stageW,stageH);
+  const t=performance.now()*0.001;
+  drawBg(t);
   drawHighway(t);
-
-  // 3. Note blocks
   drawNotes();
-
-  // 4. Hit zone buttons
   drawHitZone();
 }
 
-// ── BACKGROUND ──
-function drawBackground(t){
-  // Dark stage gradient
-  const bg = lctx.createLinearGradient(0,0,0,stageH);
-  bg.addColorStop(0, '#02020a');
-  bg.addColorStop(0.5, '#05050f');
-  bg.addColorStop(1, '#08081a');
-  lctx.fillStyle = bg;
-  lctx.fillRect(0, 0, stageW, stageH);
+function drawBg(t){
+  const g=lctx.createLinearGradient(0,0,0,stageH);
+  g.addColorStop(0,'#01010a');g.addColorStop(1,'#07071a');
+  lctx.fillStyle=g;lctx.fillRect(0,0,stageW,stageH);
 
-  // Concert lights beaming from top — animated
-  const lights = [
-    { x: stageW*0.15, color:'rgba(255,80,0,', intensity: 0.10 },
-    { x: stageW*0.35, color:'rgba(80,0,255,', intensity: 0.12 },
-    { x: stageW*0.50, color:'rgba(255,255,100,', intensity: 0.08 },
-    { x: stageW*0.65, color:'rgba(0,180,255,', intensity: 0.12 },
-    { x: stageW*0.85, color:'rgba(255,0,120,', intensity: 0.10 },
+  // Concert spotlights
+  const lights=[
+    {x:.12,c:'rgba(255,80,0,',i:.09},{x:.3,c:'rgba(60,0,255,',i:.11},
+    {x:.5,c:'rgba(255,220,80,',i:.07},{x:.7,c:'rgba(0,160,255,',i:.11},
+    {x:.88,c:'rgba(240,0,100,',i:.09}
   ];
-  lights.forEach((l,i)=>{
-    const pulse = 0.6 + 0.4*Math.sin(t * 1.1 + i * 1.3);
-    const alpha = l.intensity * pulse;
-    const grad = lctx.createRadialGradient(l.x, 0, 0, l.x, stageH*0.6, stageW*0.3);
-    grad.addColorStop(0, l.color + alpha + ')');
-    grad.addColorStop(1, l.color + '0)');
-    lctx.fillStyle = grad;
-    lctx.fillRect(0, 0, stageW, stageH);
+  lights.forEach((l,idx)=>{
+    const pulse=0.55+0.45*Math.sin(t*1.0+idx*1.25);
+    const gr=lctx.createRadialGradient(l.x*stageW,0,0,l.x*stageW,stageH*.55,stageW*.28);
+    gr.addColorStop(0,l.c+(l.i*pulse)+')');gr.addColorStop(1,l.c+'0)');
+    lctx.fillStyle=gr;lctx.fillRect(0,0,stageW,stageH);
   });
 
-  // Crowd silhouette at very top
-  drawCrowd();
+  // Crowd silhouette
+  const cH=stageH*0.16;
+  lctx.fillStyle='rgba(0,0,0,.75)';lctx.fillRect(0,0,stageW,cH);
+  lctx.fillStyle='rgba(12,8,28,.9)';
+  lctx.beginPath();lctx.moveTo(0,cH);
+  for(let x=0;x<=stageW;x+=16){
+    const bH=6+5*Math.sin(x*.09+t*.4);
+    lctx.arc(x,cH-bH*.5,8,Math.PI,0);
+  }
+  lctx.lineTo(stageW,0);lctx.lineTo(0,0);lctx.closePath();lctx.fill();
+  // Crowd lights
+  for(let i=0;i<35;i++){
+    const bx=(i/35)*stageW+6*Math.sin(t*.4+i);
+    const by=cH*.3+(cH*.4)*((i%3)/3);
+    const br=1.2+Math.sin(t*1.8+i*.65);
+    const alpha=0.35+0.5*Math.sin(t*1.3+i*.85);
+    const cs=['rgba(255,255,255,','rgba(0,200,255,','rgba(255,180,0,'];
+    const gr=lctx.createRadialGradient(bx,by,0,bx,by,br*3);
+    gr.addColorStop(0,cs[i%3]+alpha+')');gr.addColorStop(1,cs[i%3]+'0)');
+    lctx.fillStyle=gr;lctx.beginPath();lctx.arc(bx,by,br*3,0,Math.PI*2);lctx.fill();
+  }
 }
 
-function drawCrowd(){
-  const h = stageH * 0.18;
-  lctx.save();
-  lctx.fillStyle = 'rgba(0,0,0,.7)';
-  lctx.fillRect(0, 0, stageW, h);
-
-  // Simple crowd bumps
-  lctx.fillStyle = 'rgba(20,10,35,.9)';
-  lctx.beginPath();
-  lctx.moveTo(0, h);
-  for(let x=0; x<=stageW; x+=18){
-    const bumpH = 8 + 6*Math.sin(x*0.08 + performance.now()*0.001);
-    lctx.arc(x, h - bumpH*0.5, 9, Math.PI, 0);
-  }
-  lctx.lineTo(stageW, 0);lctx.lineTo(0,0);lctx.closePath();lctx.fill();
-
-  // Crowd glow dots (raised phones / lighters)
-  const now = performance.now()*0.001;
-  for(let i=0; i<40; i++){
-    const bx = (i/40)*stageW + 8*Math.sin(now*0.5+i);
-    const by = h*0.3 + (h*0.4)*(i%3)/3;
-    const br = 1.5 + Math.sin(now*2+i*0.7);
-    const alpha = 0.4 + 0.5*Math.sin(now*1.5+i*0.9);
-    const cols = ['rgba(255,255,255,','rgba(0,200,255,','rgba(255,200,0,'];
-    const g = lctx.createRadialGradient(bx,by,0,bx,by,br*3);
-    g.addColorStop(0, cols[i%3]+alpha+')');
-    g.addColorStop(1, cols[i%3]+'0)');
-    lctx.fillStyle = g;
-    lctx.beginPath();lctx.arc(bx,by,br*3,0,Math.PI*2);lctx.fill();
-  }
-  lctx.restore();
-}
-
-// ── HIGHWAY ──
 function drawHighway(t){
-  const vpy = getVPY(), hity = getHitY(), cx = getCX();
-  const scroll = getScroll();
-
-  // The highway width at the bottom = visible piano range
-  // Left edge = leftmost visible key, right edge = rightmost visible key
-  const visLeft  = -scroll;
-  const visRight = stageW - scroll;   // in piano coords
-  // Clamp to actual piano range
-  const leftX  = Math.max(0, visLeft)  - scroll + (wMap[START]??0) - scroll;
-  const rightX = stageW; // just use screen width
-
+  const vpy=getVPY(),hy=getHitY(),cx=getCX();
   // Lane trapezoid
-  const lBot = 0,          rBot = stageW;
-  const lTop = cx - 2,     rTop = cx + 2;  // near-zero width at VP
-
-  // Fill lane floor with dark textured gradient
   lctx.save();
   lctx.beginPath();
-  lctx.moveTo(lTop, vpy);
-  lctx.lineTo(rTop, vpy);
-  lctx.lineTo(rBot, hity);
-  lctx.lineTo(lBot, hity);
+  lctx.moveTo(cx-2,vpy);lctx.lineTo(cx+2,vpy);
+  lctx.lineTo(stageW,hy);lctx.lineTo(0,hy);
   lctx.closePath();
+  const lg=lctx.createLinearGradient(0,vpy,0,hy);
+  lg.addColorStop(0,'rgba(8,8,35,0)');
+  lg.addColorStop(.5,'rgba(12,12,50,.55)');
+  lg.addColorStop(1,'rgba(18,18,65,.85)');
+  lctx.fillStyle=lg;lctx.fill();
 
-  const laneGrad = lctx.createLinearGradient(0, vpy, 0, hity);
-  laneGrad.addColorStop(0,   'rgba(10,10,40,.0)');
-  laneGrad.addColorStop(0.4, 'rgba(15,15,55,.5)');
-  laneGrad.addColorStop(1,   'rgba(20,20,70,.85)');
-  lctx.fillStyle = laneGrad;
-  lctx.fill();
-
-  // ── Grid lines rushing toward player ──
-  // Horizontal beat lines
-  const BEAT_MS = 500;  // ~120bpm approximation for visual
-  const beatOffset = (G.elapsed % BEAT_MS) / BEAT_MS;
-  for(let b=0; b<12; b++){
-    const frac = (b/12 + beatOffset) % 1;
-    const ms = frac * LOOKAHEAD_MS;
-    const { y } = project(60 /* dummy midi */, ms);  // just need Y
-    const xLeft  = cx + (lBot - cx) * Math.pow(frac, 0.75);
-    const xRight = cx + (rBot - cx) * Math.pow(frac, 0.75);
-    const alpha = 0.03 + 0.08 * (1-frac);
-    lctx.strokeStyle = `rgba(100,150,255,${alpha})`;
-    lctx.lineWidth = frac * 2;
-    lctx.beginPath();lctx.moveTo(xLeft,y);lctx.lineTo(xRight,y);lctx.stroke();
+  // Beat lines rushing toward player
+  const beatOffset=(G.elapsed%500)/500;
+  for(let b=0;b<10;b++){
+    const frac=((b/10+beatOffset)%1);
+    const ms=frac*LOOKAHEAD_MS;
+    const pe=Math.pow(frac,0.72);
+    const y=hy+(vpy-hy)*pe;
+    const xl=cx+(0-cx)*pe, xr=cx+(stageW-cx)*pe;
+    const alpha=0.025+0.07*(1-frac);
+    lctx.strokeStyle=`rgba(100,140,255,${alpha})`;
+    lctx.lineWidth=frac*2.5;
+    lctx.beginPath();lctx.moveTo(xl,y);lctx.lineTo(xr,y);lctx.stroke();
   }
 
-  // Vertical lane dividers — project each visible white key boundary
-  lctx.strokeStyle = 'rgba(60,80,160,.15)';
-  lctx.lineWidth = 1;
-  for(let m=START; m<START+TOTAL; m++){
-    if(isBlack(m)) continue;
-    const kx = (wMap[m]??0) - scroll;
-    if(kx < -WW || kx > stageW+WW) continue;
-    // Project the lane line from hitY to VP
-    const bx = kx;  // at hit zone
-    const tx = cx + (bx-cx)*0.04;  // near VP (95% toward center)
-    lctx.beginPath();
-    lctx.moveTo(tx, vpy+stageH*0.05);
-    lctx.lineTo(bx, hity);
-    lctx.stroke();
-  }
+  // Lane dividers (7 columns)
+  KEY_GROUPS.forEach((_,i)=>{
+    const kx=keyScreenX(i);
+    const tx=cx+(kx-cx)*0.04;
+    lctx.strokeStyle='rgba(80,100,200,.12)';lctx.lineWidth=1;
+    lctx.beginPath();lctx.moveTo(tx,vpy+stageH*.06);lctx.lineTo(kx,hy);lctx.stroke();
+  });
 
-  // Center stripe
-  const cgrad = lctx.createLinearGradient(0,vpy,0,hity);
-  cgrad.addColorStop(0,'rgba(100,150,255,0)');
-  cgrad.addColorStop(1,'rgba(100,150,255,.08)');
-  lctx.strokeStyle=cgrad;lctx.lineWidth=2;
-  lctx.beginPath();lctx.moveTo(cx,vpy);lctx.lineTo(cx,hity);lctx.stroke();
-
-  // Side edges of the lane — bright lines
-  [[lTop,rTop],[lBot,rBot]].forEach(()=>{});
-  const drawEdge=(tx,bx,bright)=>{
-    const eg=lctx.createLinearGradient(tx,vpy,bx,hity);
+  // Side edges
+  const drawEdge=(x)=>{
+    const eg=lctx.createLinearGradient(cx,vpy,x,hy);
     eg.addColorStop(0,'rgba(0,200,255,0)');
-    eg.addColorStop(0.3,'rgba(0,200,255,.3)');
-    eg.addColorStop(1,`rgba(0,200,255,${bright})`);
-    lctx.strokeStyle=eg;lctx.lineWidth=bright>0.4?2:1;
-    lctx.beginPath();lctx.moveTo(tx,vpy);lctx.lineTo(bx,hity);lctx.stroke();
+    eg.addColorStop(.35,'rgba(0,200,255,.28)');
+    eg.addColorStop(1,'rgba(0,200,255,.5)');
+    lctx.strokeStyle=eg;lctx.lineWidth=2;
+    lctx.beginPath();lctx.moveTo(cx,vpy);lctx.lineTo(x,hy);lctx.stroke();
   };
-  drawEdge(lTop,lBot,0.5);
-  drawEdge(rTop,rBot,0.5);
-
+  drawEdge(0);drawEdge(stageW);
   lctx.restore();
 }
 
-// ── NOTE BLOCKS ──
 function drawNotes(){
-  if(!G.playing && !G.gameOver) return;
-
-  // Sort notes by p (farthest first, so close notes render on top)
-  const visible = [];
-  for(const fn of falling){
-    if(fn.removed || fn.hit) continue;
-    const t_ms = fn.startMs - G.elapsed;
-    if(t_ms > LOOKAHEAD_MS + 200) continue; // too far
-    const proj = project(fn.midi, t_ms);
-    if(proj.y > stageH + 60) continue; // below screen
-    visible.push({fn, proj, t_ms});
-  }
-  // Draw farthest first
-  visible.sort((a,b)=>a.proj.p - b.proj.p);
-
-  for(const {fn, proj, t_ms} of visible){
-    const col = NOTE_COLORS[fn.track % NOTE_COLORS.length];
-
-    // Note block: from startMs to endMs
-    const projTop  = project(fn.midi, t_ms);
-    const projBot  = project(fn.midi, fn.endMs - G.elapsed);
-
-    const x  = projTop.x;
-    const y  = projTop.y;
-    const x2 = projBot.x;
-    const y2 = projBot.y;
-    const w1 = projTop.w;
-    const w2 = projBot.w;
-
-    if(y2 < getVPY() - 20) continue;
-    if(y  > stageH + 20)   continue;
-
-    lctx.save();
-
-    // Glow shadow
-    lctx.shadowColor = col.glow;
-    lctx.shadowBlur  = 14 + (1-projTop.p)*18;
-
-    // Draw trapezoid note block (perspective-correct)
-    drawNoteTrap(x, y, w1, x2, y2, w2, col, projTop.p);
-
-    lctx.restore();
-  }
-}
-
-function drawNoteTrap(x1,y1,w1, x2,y2,w2, col, p){
-  // Clamp to visible range
-  const hy = getHitY();
-  const vpy = getVPY();
-
-  // Note body — trapezoid
-  lctx.beginPath();
-  lctx.moveTo(x1-w1/2, y1);
-  lctx.lineTo(x1+w1/2, y1);
-  lctx.lineTo(x2+w2/2, y2);
-  lctx.lineTo(x2-w2/2, y2);
-  lctx.closePath();
-
-  // gradient from bright top to dark bottom
-  const g = lctx.createLinearGradient(x1,y1,x2,y2);
-  g.addColorStop(0, col.hi);
-  g.addColorStop(0.35, col.mid);
-  g.addColorStop(1, col.lo);
-  lctx.fillStyle = g;
-  lctx.fill();
-
-  // Top edge shine (the "cap" of the block)
-  lctx.shadowBlur = 0;
-  const capH = Math.max(3, w1*0.18);
-  lctx.beginPath();
-  lctx.moveTo(x1-w1/2, y1);
-  lctx.lineTo(x1+w1/2, y1);
-  lctx.lineTo(x1+w1/2, y1+capH);
-  lctx.lineTo(x1-w1/2, y1+capH);
-  lctx.closePath();
-  lctx.fillStyle = 'rgba(255,255,255,.45)';
-  lctx.fill();
-
-  // Bottom glow cap when near hit zone
-  const dist = Math.abs(y2 - hy);
-  if(dist < 80){
-    const alpha = 1 - dist/80;
-    lctx.beginPath();
-    lctx.moveTo(x2-w2/2, y2-capH);
-    lctx.lineTo(x2+w2/2, y2-capH);
-    lctx.lineTo(x2+w2/2, y2);
-    lctx.lineTo(x2-w2/2, y2);
-    lctx.closePath();
-    lctx.fillStyle = `rgba(255,255,255,${alpha*.4})`;
-    lctx.fill();
-  }
-
-  // Left/right edge shading
-  lctx.beginPath();
-  lctx.moveTo(x1-w1/2,y1);lctx.lineTo(x2-w2/2,y2);
-  lctx.lineTo(x2-w2/2+1,y2);lctx.lineTo(x1-w1/2+1,y1);
-  lctx.closePath();
-  lctx.fillStyle='rgba(255,255,255,.12)';lctx.fill();
-}
-
-// ── HIT ZONE ──
-function drawHitZone(){
-  const hy = getHitY();
-  const cw = stageW;
-  const scroll = getScroll();
-  lctx.save();
-
-  // Background glow above hit line
-  const glowGrad = lctx.createLinearGradient(0, hy-60, 0, hy+20);
-  glowGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  glowGrad.addColorStop(1, 'rgba(0,10,30,.8)');
-  lctx.fillStyle = glowGrad;
-  lctx.fillRect(0, hy-60, cw, 80);
-
-  // Main hit line
-  const lineGrad = lctx.createLinearGradient(0, 0, cw, 0);
-  lineGrad.addColorStop(0,   'rgba(0,220,255,0)');
-  lineGrad.addColorStop(0.08,'rgba(0,220,255,.85)');
-  lineGrad.addColorStop(0.5, 'rgba(140,200,255,1)');
-  lineGrad.addColorStop(0.92,'rgba(0,220,255,.85)');
-  lineGrad.addColorStop(1,   'rgba(0,220,255,0)');
-  lctx.strokeStyle = lineGrad;
-  lctx.lineWidth = 3;
-  lctx.shadowColor = '#00ddff'; lctx.shadowBlur = 20;
-  lctx.beginPath();lctx.moveTo(0,hy);lctx.lineTo(cw,hy);lctx.stroke();
-  lctx.shadowBlur = 0;
-
-  // Subtle glow strip below
-  const strip = lctx.createLinearGradient(0,hy,0,hy+40);
-  strip.addColorStop(0,'rgba(0,200,255,.12)');
-  strip.addColorStop(1,'rgba(0,0,0,0)');
-  lctx.fillStyle=strip; lctx.fillRect(0,hy,cw,40);
-
-  // Draw GH-style oval buttons at each visible key position
-  drawButtons(hy);
-
-  lctx.restore();
-}
-
-function drawButtons(hy){
-  // Find keys with notes about to hit (within ±200ms)
-  const hotKeys = new Map(); // midi -> col
+  if(!G.playing&&!G.gameOver)return;
+  const visible=[];
   for(const fn of falling){
     if(fn.removed||fn.hit)continue;
-    const dt = fn.startMs - G.elapsed;
-    if(Math.abs(dt) < 220){
-      hotKeys.set(fn.midi, NOTE_COLORS[fn.track%NOTE_COLORS.length]);
-    }
+    const t=fn.startMs-G.elapsed;
+    if(t>LOOKAHEAD_MS+200)continue;
+    const proj=project(fn.group,t);
+    if(proj.y>stageH+60)continue;
+    visible.push({fn,proj,t});
   }
+  visible.sort((a,b)=>a.proj.p-b.proj.p);
 
-  const cw = stageW;
-  const rW = isBlack(0)?BW:WW;
-  const RX = Math.min(WW*0.44, 15);  // oval half-width
-  const RY = RX * 0.55;              // oval half-height
+  for(const{fn,proj,t} of visible){
+    const col=KEY_GROUPS[fn.group];
+    const projTop=project(fn.group,t);
+    const projBot=project(fn.group,fn.endMs-G.elapsed);
+    drawNoteTrap(projTop,projBot,col);
+  }
+}
 
-  const drawBtn = (midi, isB)=>{
-    const kx = keyPhysX(midi);
-    if(kx < -30 || kx > cw+30) return;
-    const hot = hotKeys.has(midi);
-    const col = hot ? hotKeys.get(midi) : null;
-    const pressed = keyEls[midi]?.classList.contains('pressed');
-    const bRX = isB ? RX*0.65 : RX;
-    const bRY = isB ? RY*0.65 : RY;
+function drawNoteTrap(pt,pb,col){
+  const hy=getHitY(),vpy=getVPY();
+  const x1=pt.x,y1=pt.y,w1=pt.w;
+  const x2=pb.x,y2=pb.y,w2=pb.w;
+  if(y2<vpy-20||y1>stageH+20)return;
+
+  lctx.save();
+  lctx.shadowColor=col.glow;lctx.shadowBlur=12+(1-pt.p)*16;
+
+  // Body
+  lctx.beginPath();
+  lctx.moveTo(x1-w1/2,y1);lctx.lineTo(x1+w1/2,y1);
+  lctx.lineTo(x2+w2/2,y2);lctx.lineTo(x2-w2/2,y2);
+  lctx.closePath();
+  const g=lctx.createLinearGradient(x1,y1,x2,y2);
+  g.addColorStop(0,col.hi2);g.addColorStop(.4,col.color);
+  g.addColorStop(1,shadeHex(col.color,-55));
+  lctx.fillStyle=g;lctx.fill();
+
+  // Top shine
+  lctx.shadowBlur=0;
+  const capH=Math.max(2,w1*.18);
+  lctx.fillStyle='rgba(255,255,255,.4)';
+  lctx.beginPath();lctx.moveTo(x1-w1/2,y1);lctx.lineTo(x1+w1/2,y1);
+  lctx.lineTo(x1+w1/2,y1+capH);lctx.lineTo(x1-w1/2,y1+capH);lctx.closePath();
+  lctx.fill();
+
+  // Bottom glow cap near hit zone
+  const dist=Math.abs(y2-hy);
+  if(dist<90){
+    const alpha=(1-dist/90)*.4;
+    lctx.fillStyle=`rgba(255,255,255,${alpha})`;
+    lctx.beginPath();lctx.moveTo(x2-w2/2,y2-capH);lctx.lineTo(x2+w2/2,y2-capH);
+    lctx.lineTo(x2+w2/2,y2);lctx.lineTo(x2-w2/2,y2);lctx.closePath();lctx.fill();
+  }
+  lctx.restore();
+}
+
+function drawHitZone(){
+  const hy=getHitY(),cw=stageW;
+  lctx.save();
+
+  // Glow strip
+  const glw=lctx.createLinearGradient(0,hy-50,0,hy+25);
+  glw.addColorStop(0,'rgba(0,0,0,0)');glw.addColorStop(1,'rgba(0,8,28,.85)');
+  lctx.fillStyle=glw;lctx.fillRect(0,hy-50,cw,75);
+
+  // Hit line
+  const lg=lctx.createLinearGradient(0,0,cw,0);
+  lg.addColorStop(0,'rgba(0,220,255,0)');lg.addColorStop(.08,'rgba(0,220,255,.85)');
+  lg.addColorStop(.5,'rgba(150,210,255,1)');lg.addColorStop(.92,'rgba(0,220,255,.85)');
+  lg.addColorStop(1,'rgba(0,220,255,0)');
+  lctx.strokeStyle=lg;lctx.lineWidth=3;
+  lctx.shadowColor='#00ddff';lctx.shadowBlur=18;
+  lctx.beginPath();lctx.moveTo(0,hy);lctx.lineTo(cw,hy);lctx.stroke();
+  lctx.shadowBlur=0;
+
+  // 7 oval buttons at hit zone
+  KEY_GROUPS.forEach((kg,i)=>{
+    const kx=keyScreenX(i);
+    const kw=keyScreenW(i);
+    const rx=kw*.42,ry=rx*.5;
+    const hot=isKeyHot(i);
+    const pressed=keyEls[i]?.classList.contains('pressed');
 
     lctx.save();
-    if(hot || pressed){
-      lctx.shadowColor = pressed ? '#ffffff' : col.glow;
-      lctx.shadowBlur  = pressed ? 30 : 22;
-    }
+    if(hot||pressed){lctx.shadowColor=pressed?'#fff':kg.glow;lctx.shadowBlur=pressed?28:20;}
 
     // Outer ring
-    lctx.beginPath();
-    lctx.ellipse(kx, hy, bRX*1.15, bRY*1.15, 0, 0, Math.PI*2);
-    lctx.strokeStyle = hot ? col.hi : pressed ? '#fff' : 'rgba(100,120,200,.35)';
-    lctx.lineWidth   = hot ? 2.5 : pressed ? 3 : 1;
-    lctx.stroke();
+    lctx.beginPath();lctx.ellipse(kx,hy,rx*1.12,ry*1.12,0,0,Math.PI*2);
+    lctx.strokeStyle=hot?kg.hi2:pressed?'#fff':'rgba(120,140,200,.3)';
+    lctx.lineWidth=hot?2.5:pressed?3:1.2;lctx.stroke();
 
-    // Inner fill
-    lctx.beginPath();
-    lctx.ellipse(kx, hy, bRX, bRY, 0, 0, Math.PI*2);
-    if(hot || pressed){
-      const rg = lctx.createRadialGradient(kx,hy-bRY*0.3,0,kx,hy,bRX);
-      rg.addColorStop(0, pressed ? 'rgba(255,255,255,.9)' : col.hi+'ee');
-      rg.addColorStop(1, pressed ? 'rgba(255,255,255,.3)' : col.mid+'88');
-      lctx.fillStyle = rg;
-    } else {
-      lctx.fillStyle = isB ?
-        'rgba(20,20,50,.8)' :
-        'rgba(40,40,80,.5)';
+    // Fill
+    lctx.beginPath();lctx.ellipse(kx,hy,rx,ry,0,0,Math.PI*2);
+    if(hot||pressed){
+      const rg=lctx.createRadialGradient(kx,hy-ry*.3,0,kx,hy,rx);
+      rg.addColorStop(0,pressed?'rgba(255,255,255,.9)':kg.hi2+'ee');
+      rg.addColorStop(1,pressed?'rgba(255,255,255,.25)':kg.color+'77');
+      lctx.fillStyle=rg;
+    }else{
+      lctx.fillStyle='rgba(30,35,70,.65)';
     }
     lctx.fill();
 
-    // Center dot highlight
-    if(!hot && !pressed){
-      lctx.beginPath();
-      lctx.ellipse(kx, hy-bRY*0.25, bRX*0.35, bRY*0.3, 0, 0, Math.PI*2);
-      lctx.fillStyle='rgba(255,255,255,.08)';lctx.fill();
+    // Label inside button
+    if(!hot&&!pressed){
+      lctx.fillStyle='rgba(255,255,255,.22)';
+      lctx.font=`bold ${Math.floor(ry*.9)}px Orbitron,monospace`;
+      lctx.textAlign='center';lctx.textBaseline='middle';
+      lctx.fillText(kg.label,kx,hy);
     }
-
     lctx.restore();
-  };
+  });
 
-  // Draw whites first (underneath), then blacks on top
-  for(let m=START;m<START+TOTAL;m++){if(!isBlack(m)) drawBtn(m,false)}
-  for(let m=START;m<START+TOTAL;m++){if(isBlack(m))  drawBtn(m,true)}
+  lctx.restore();
 }
 
-function roundRect(ctx,x,y,w,h,r){
-  if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return}
-  const mr=Math.min(r,w/2,h/2);
-  ctx.beginPath();
-  ctx.moveTo(x+mr,y);ctx.lineTo(x+w-mr,y);ctx.arcTo(x+w,y,x+w,y+mr,mr);
-  ctx.lineTo(x+w,y+h-mr);ctx.arcTo(x+w,y+h,x+w-mr,y+h,mr);
-  ctx.lineTo(x+mr,y+h);ctx.arcTo(x,y+h,x,y+h-mr,mr);
-  ctx.lineTo(x,y+mr);ctx.arcTo(x,y,x+mr,y,mr);
-  ctx.closePath();
+function isKeyHot(groupIdx){
+  for(const fn of falling){
+    if(fn.removed||fn.hit)continue;
+    if(fn.group===groupIdx&&Math.abs(fn.startMs-G.elapsed)<260)return true;
+  }
+  return false;
 }
 
-function shadeColor(hex,pct){
-  const n=parseInt(hex.slice(1),16);
+function shadeHex(hex,pct){
+  const n=parseInt(hex.replace('#',''),16);
   const r=Math.max(0,Math.min(255,((n>>16)&0xff)+pct));
   const g=Math.max(0,Math.min(255,((n>>8)&0xff)+pct));
   const b=Math.max(0,Math.min(255,(n&0xff)+pct));
@@ -1389,7 +1059,7 @@ function shadeColor(hex,pct){
 }
 
 // ═══════════════════════════════════════════════════
-//  HEALTH BAR
+//  HEALTH
 // ═══════════════════════════════════════════════════
 const MAX_HP=100;let HP=MAX_HP;
 function setHP(v){
@@ -1397,15 +1067,15 @@ function setHP(v){
   const pct=HP/MAX_HP;
   document.getElementById('healthFill').style.width=(pct*100)+'%';
   document.getElementById('healthPct').textContent=Math.round(HP)+'%';
-  const bar=document.getElementById('healthTrack'),pctEl=document.getElementById('healthPct');
+  const bar=document.getElementById('healthTrack'),pe=document.getElementById('healthPct');
   bar.classList.remove('danger','warn');
-  if(pct<=0.25){bar.classList.add('danger');pctEl.style.color='#ff2d78'}
-  else if(pct<=0.55){bar.classList.add('warn');pctEl.style.color='#ffcc00'}
-  else pctEl.style.color='#39ff14';
+  if(pct<=0.25){bar.classList.add('danger');pe.style.color='#ff2d78'}
+  else if(pct<=0.55){bar.classList.add('warn');pe.style.color='#ffcc00'}
+  else pe.style.color='#39ff14';
   if(HP<=0)triggerGameOver();
 }
-function dmgHP(a){setHP(HP-a);screenFlash('rgba(255,0,0,0.22)',100);}
-function healHP(a){setHP(HP+a);}
+function dmgHP(a){setHP(HP-a);screenFlash('rgba(255,0,0,.22)',100)}
+function healHP(a){setHP(HP+a)}
 function screenFlash(col,ms){
   const fl=document.getElementById('flash');
   fl.style.background=col;fl.style.opacity='1';fl.style.transition=`opacity ${ms*2}ms`;
@@ -1421,19 +1091,18 @@ const G={
   notes:[],elapsed:0,startTime:0,totalDur:0,songName:'',
   score:0,combo:0,maxCombo:0,hits:0,misses:0,spawnIdx:0,waiting:false,
 };
-let chords=[],chordIdx=0,currentChord=null;
-let animId=0;
-let falling=[];
+let falling=[],chords=[],chordIdx=0,currentChord=null,animId=0;
 
+// Group chords: events with same group within 65ms merge
 function makeChords(notes){
   if(!notes.length)return[];
   const groups=[];let i=0;
   while(i<notes.length){
-    const base=notes[i].startMs,g={ms:base,notes:[]};
+    const base=notes[i].startMs,g={ms:base,groups:new Set()};
     while(i<notes.length&&notes[i].startMs<=base+65){
-      if(!g.notes.includes(notes[i].note))g.notes.push(notes[i].note);i++;
+      g.groups.add(notes[i].group);i++;
     }
-    groups.push(g);
+    groups.push({ms:g.ms,groups:[...g.groups]});
   }
   return groups;
 }
@@ -1441,120 +1110,112 @@ function makeChords(notes){
 // ═══════════════════════════════════════════════════
 //  MAIN LOOP
 // ═══════════════════════════════════════════════════
-let lastRaf=0;
 function loop(now){
   if(!G.playing||G.gameOver)return;
   if(G.paused){animId=requestAnimationFrame(loop);return}
 
-  if(!G.waiting){
-    G.elapsed=(now-G.startTime)*G.speed;
-  }else{
-    G.startTime=now-G.elapsed/G.speed;
-  }
+  if(!G.waiting) G.elapsed=(now-G.startTime)*G.speed;
+  else G.startTime=now-G.elapsed/G.speed;
 
-  // STRICT: trigger wait for next chord
+  // STRICT mode: wait for correct group
   if(G.mode==='strict'&&chords.length){
     if(!G.waiting&&chordIdx<chords.length){
       const cg=chords[chordIdx];
       if(cg.ms<=G.elapsed+140){
         G.waiting=true;
         currentChord={...cg,done:new Set()};
-        currentChord.notes.forEach(m=>setKS(m,'waiting'));
-        scrollToChord(currentChord.notes);
+        currentChord.groups.forEach(gi=>setKS(gi,'waiting'));
         document.getElementById('waitBar').style.display='block';
       }
     }
   }
 
   // Spawn notes
-  const AHEAD=3600/G.speed;
+  const AHEAD=LOOKAHEAD_MS+200;
   while(G.spawnIdx<G.notes.length){
     const n=G.notes[G.spawnIdx];
     if(n.startMs>G.elapsed+AHEAD)break;
-    falling.push({midi:n.note,track:n.track,startMs:n.startMs,endMs:n.endMs,hit:false,missed:false,removed:false});
+    falling.push({midi:n.note,group:n.group,startMs:n.startMs,endMs:n.endMs,hit:false,missed:false,removed:false});
     G.spawnIdx++;
   }
 
-  // Update miss detection — time-based (note passed hit zone by >500ms)
+  // Miss detection (relax mode)
   for(const fn of falling){
     if(fn.removed)continue;
-    const msSinceStart = G.elapsed - fn.startMs;
-    if(!fn.hit&&!fn.missed&&G.mode==='relax'&&msSinceStart>500){
+    const msSince=G.elapsed-fn.startMs;
+    if(!fn.hit&&!fn.missed&&G.mode==='relax'&&msSince>500){
       fn.missed=true;fn.removed=true;
       G.misses++;G.combo=0;dmgHP(8);flashFB('✗ FALLADA',false,0);updHUD();
     }
-    if(fn.hit&&msSinceStart>3000)fn.removed=true;
+    if(fn.hit&&msSince>3000)fn.removed=true;
   }
 
   // Illuminate keys in relax mode
   if(G.mode==='relax'){
-    const lit=new Set();
-    for(const fn of falling){
-      if(fn.hit||fn.missed||fn.removed)continue;
-      const dt=fn.startMs-G.elapsed;
-      if(dt>0&&dt<350)lit.add(fn.midi);
-    }
-    for(const[m,el]of Object.entries(keyEls)){
-      const nm=+m;
-      if(lit.has(nm)){if(!el.classList.contains('pressed')&&!el.classList.contains('correct'))el.classList.add('glow')}
-      else el.classList.remove('glow');
-    }
+    KEY_GROUPS.forEach((_,i)=>{
+      const hot=falling.some(fn=>!fn.hit&&!fn.missed&&!fn.removed&&fn.group===i&&fn.startMs-G.elapsed>0&&fn.startMs-G.elapsed<380);
+      const el=keyEls[i];
+      if(!el)return;
+      if(hot&&!el.classList.contains('pressed')&&!el.classList.contains('correct'))
+        el.classList.add('glow');
+      else if(!hot) el.classList.remove('glow');
+    });
   }
 
   drawStage();
-
   document.getElementById('progFill').style.width=Math.min(100,G.elapsed/G.totalDur*100)+'%';
+  if(G.mode!=='free'&&!G.waiting)setHP(HP-0.004*G.speed);
 
-  // slow HP drain
-  if(G.mode!=='free'&&!G.waiting)setHP(HP-0.005*G.speed);
-
-  // End check
-  if(G.elapsed>G.totalDur+3200&&G.spawnIdx>=G.notes.length&&falling.filter(f=>!f.removed).length===0){
+  if(G.elapsed>G.totalDur+3000&&G.spawnIdx>=G.notes.length&&!falling.some(f=>!f.removed)){
     endGame();return;
   }
-
   animId=requestAnimationFrame(loop);
 }
 
 // ═══════════════════════════════════════════════════
-//  INPUT
+//  INPUT HANDLER
 // ═══════════════════════════════════════════════════
-function handleInput(midi){
+function handleInput(groupIdx){
   if(!G.playing||G.paused||G.gameOver||G.mode==='free')return;
+
   if(G.mode==='strict'){
     if(!G.waiting||!currentChord)return;
-    if(!currentChord.notes.includes(midi)){flashFB('✗ INCORRECTA',false,0);dmgHP(5);return}
-    currentChord.done.add(midi);setKS(midi,'correct');
-    if(currentChord.notes.every(m=>currentChord.done.has(m))){
-      const n=currentChord.notes.length;
+    if(!currentChord.groups.includes(groupIdx)){
+      flashFB('✗ INCORRECTO',false,0);dmgHP(5);return;
+    }
+    currentChord.done.add(groupIdx);setKS(groupIdx,'correct');
+    if(currentChord.groups.every(g=>currentChord.done.has(g))){
+      const n=currentChord.groups.length;
       G.hits+=n;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
       const pts=(100+G.combo*5)*n;G.score+=pts;
-      healHP(n>1?4:2.5+Math.min(G.combo*0.25,5));
-      flashFB(G.combo>=10?'PERFECT! 🔥 ×'+G.combo:G.combo>=5?'GREAT! ⚡':n>1?'CHORD! 🎵':'GOOD!',true,pts);
-      spawnParts(currentChord.notes);
-      currentChord.notes.forEach(m=>{
-        const fn=falling.find(f=>!f.hit&&f.midi===m&&Math.abs(f.startMs-currentChord.ms)<250);
-        if(fn)fn.hit=true;setKS(m,null);
+      healHP(n>1?4:2.5+Math.min(G.combo*.25,5));
+      flashFB(G.combo>=10?'PERFECTO! 🔥':G.combo>=5?'GENIAL! ⚡':'BIEN! ✓',true,pts);
+      spawnParts(currentChord.groups);
+      currentChord.groups.forEach(gi=>{
+        const fn=falling.find(f=>!f.hit&&f.group===gi&&Math.abs(f.startMs-currentChord.ms)<280);
+        if(fn)fn.hit=true;setKS(gi,null);
       });
       chordIdx++;currentChord=null;G.waiting=false;
-      document.getElementById('waitBar').style.display='none';updHUD();
+      document.getElementById('waitBar').style.display='none';
+      updHUD();
     }
     return;
   }
+
   // RELAX
   let best=null,bestD=Infinity;
   for(const fn of falling){
-    if(fn.hit||fn.missed||fn.midi!==midi)continue;
+    if(fn.hit||fn.missed||fn.group!==groupIdx)continue;
     const d=Math.abs(fn.startMs-G.elapsed);
-    if(d<bestD&&d<500){bestD=d;best=fn;}
+    if(d<bestD&&d<520){bestD=d;best=fn;}
   }
   if(best){
     best.hit=true;G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
     const pts=bestD<130?100:bestD<280?55:25;
     G.score+=pts*Math.max(1,Math.floor(G.combo/5));
     healHP(bestD<130?3:1.5);
-    flashFB(bestD<130?'PERFECT! ✨':bestD<280?'GOOD ⚡':'OK',true,pts);
-    spawnParts([midi]);updHUD();
+    flashFB(bestD<130?'PERFECTO! ✨':bestD<280?'BIEN! ⚡':'OK',true,pts);
+    spawnParts([groupIdx]);updHUD();
   }
 }
 
@@ -1563,8 +1224,8 @@ function handleInput(midi){
 // ═══════════════════════════════════════════════════
 function triggerGameOver(){
   if(G.gameOver)return;
-  G.gameOver=true;G.playing=false;cancelAnimationFrame(animId);
-  Object.values(keyEls).forEach(el=>el.classList.remove('waiting','correct','glow'));
+  G.gameOver=true;G.playing=false;cancelAnimationFrame(animId);stopAllNotes();
+  KEY_GROUPS.forEach((_,i)=>setKS(i,null));
   const tot=G.hits+G.misses,acc=tot?Math.round(G.hits/tot*100):0;
   document.getElementById('goScore').textContent=G.score.toLocaleString();
   document.getElementById('goCombo').textContent=G.maxCombo;
@@ -1587,25 +1248,18 @@ function updHUD(){
   document.getElementById('scoreV').textContent=G.score.toLocaleString();
   document.getElementById('comboV').textContent='×'+G.combo;
 }
-function scrollToChord(midis){
-  if(!midis.length)return;
-  const avg=midis.reduce((a,b)=>a+b,0)/midis.length;
-  const nr=Math.round(avg);
-  const ax=wMap[nr]??wMap[nr+1]??wMap[nr-1]??0;
-  document.getElementById('pianoScroll').scrollTo({left:Math.max(0,ax-window.innerWidth/2),behavior:'smooth'});
-}
-function spawnParts(midis){
+function spawnParts(groups){
   const fa=document.getElementById('stageWrap');
-  const hitY=getHitY();
+  const hy=getHitY();
   const cols=['#00f5ff','#ffcc00','#39ff14','#ff2d78','#4488ff','#ff7700','#fff'];
-  midis.forEach(midi=>{
-    const x=keyPhysX(midi);
-    for(let i=0;i<12;i++){
+  groups.forEach(gi=>{
+    const x=keyScreenX(gi);
+    for(let i=0;i<14;i++){
       const p=document.createElement('div');p.className='prt';
-      const sz=3+Math.random()*8;
-      p.style.cssText=`width:${sz}px;height:${sz}px;left:${x}px;top:${hitY}px;position:absolute;
-        background:${cols[Math.floor(Math.random()*cols.length)]};
-        --tx:${(Math.random()-.5)*110}px;--ty:${-(35+Math.random()*80)}px;z-index:40`;
+      const sz=3+Math.random()*9;
+      p.style.cssText=`width:${sz}px;height:${sz}px;left:${x}px;top:${hy}px;
+        background:${cols[Math.floor(Math.random()*cols.length)]};position:absolute;
+        --tx:${(Math.random()-.5)*120}px;--ty:${-(40+Math.random()*90)}px;z-index:40`;
       fa.appendChild(p);setTimeout(()=>p.remove(),750);
     }
   });
@@ -1619,28 +1273,28 @@ function showScreen(id){
 //  GAME FLOW
 // ═══════════════════════════════════════════════════
 let savedNotes=[],savedName='';
+
 function startGame(notes,name){
-  cancelAnimationFrame(animId);
+  cancelAnimationFrame(animId);stopAllNotes();
   HP=MAX_HP;setHP(HP);
-  Object.assign(G,{
-    notes,songName:name,score:0,combo:0,maxCombo:0,hits:0,misses:0,
-    elapsed:0,spawnIdx:0,playing:true,paused:false,gameOver:false,waiting:false,
-  });
+  Object.assign(G,{notes,songName:name,score:0,combo:0,maxCombo:0,hits:0,misses:0,
+    elapsed:0,spawnIdx:0,playing:true,paused:false,gameOver:false,waiting:false});
   falling=[];currentChord=null;chords=makeChords(notes);chordIdx=0;
-  G.totalDur=notes.length?(notes[notes.length-1].endMs+2000):12000;
+  G.totalDur=notes.length?notes[notes.length-1].endMs+2000:12000;
   document.getElementById('songTitleH').textContent=name;
   document.getElementById('progFill').style.width='0%';
   document.getElementById('feedback').style.opacity='0';
   document.getElementById('pauseOv').classList.remove('show');
   document.getElementById('gameOverOv').classList.remove('show');
   document.getElementById('waitBar').style.display='none';
-  Object.values(keyEls).forEach(el=>el.classList.remove('waiting','correct','glow'));
+  KEY_GROUPS.forEach((_,i)=>setKS(i,null));
   updHUD();
   G.startTime=performance.now();
   animId=requestAnimationFrame(loop);
 }
+
 function endGame(){
-  G.playing=false;cancelAnimationFrame(animId);
+  G.playing=false;cancelAnimationFrame(animId);stopAllNotes();
   const tot=G.hits+G.misses,acc=tot?Math.round(G.hits/tot*100):0;
   const grade=acc>=95?'S':acc>=85?'A':acc>=70?'B':acc>=50?'C':'D';
   const emoji={S:'🏆',A:'🌟',B:'🎉',C:'👍',D:'😅'}[grade];
@@ -1655,17 +1309,31 @@ function endGame(){
   showScreen('resultScreen');
 }
 
+function launchFree(){
+  getAudio();
+  Object.assign(G,{mode:'free',playing:true,paused:false,gameOver:false,
+    notes:[],elapsed:0,spawnIdx:0,score:0,combo:0,hits:0,misses:0,waiting:false});
+  falling=[];chords=[];chordIdx=0;currentChord=null;
+  HP=MAX_HP;setHP(HP);
+  showScreen('gameScreen');resizeCvs();buildPiano();
+  document.getElementById('songTitleH').textContent='🎹 MODO LIBRE';
+  document.getElementById('waitBar').style.display='none';
+  document.getElementById('gameOverOv').classList.remove('show');
+  updHUD();
+  countdown(()=>{G.startTime=performance.now();animId=requestAnimationFrame(loop);});
+}
+
 // ═══════════════════════════════════════════════════
 //  COUNTDOWN
 // ═══════════════════════════════════════════════════
 function countdown(then){
   const ov=document.getElementById('countdownOv'),num=document.getElementById('cdNum'),sub=document.getElementById('cdSub');
-  ov.classList.add('show');
-  let n=3;
+  ov.classList.add('show');let n=3;
   function tick(){
     num.className='';void num.offsetWidth;
     if(n>0){num.textContent=n;num.className='anim';sub.textContent='prepárate…';n--;setTimeout(tick,900)}
-    else{num.textContent='¡YA!';num.className='go anim';sub.textContent='¡toca!';setTimeout(()=>{ov.classList.remove('show');then();},800)}
+    else{num.textContent='¡YA!';num.className='go anim';sub.textContent='¡toca!';
+      setTimeout(()=>{ov.classList.remove('show');then();},800)}
   }
   tick();
 }
@@ -1674,13 +1342,12 @@ function countdown(then){
 //  MODE & EVENTS
 // ═══════════════════════════════════════════════════
 const mDescs={
-  strict:'La música espera hasta que toques las notas correctas ⏸',
-  relax:'Las notas caen — toca cuando lleguen al botón 🎵',
-  free:'Toca libremente el piano completo 🎹'
+  strict:'La música espera hasta que toques el grupo correcto ⏸',
+  relax:'Las notas caen — toca el número cuando llegue al botón 🎵',
 };
 function setMode(m){
   G.mode=m;
-  ['Strict','Relax','Free'].forEach(x=>document.getElementById('m'+x).classList.remove('on'));
+  ['Strict','Relax'].forEach(x=>document.getElementById('m'+x).classList.remove('on'));
   document.getElementById('m'+m.charAt(0).toUpperCase()+m.slice(1)).classList.add('on');
   document.getElementById('mDesc').textContent=mDescs[m];
 }
@@ -1699,10 +1366,10 @@ function loadMidi(file){
   r.onload=ev=>{
     try{
       const notes=parseMidi(ev.target.result);
-      if(!notes.length)throw new Error('No se encontraron notas');
       savedNotes=notes;savedName=file.name.replace(/\.midi?$/i,'');
       const dur=Math.round(notes[notes.length-1].endMs/1000);
-      document.getElementById('songInfo').textContent=`✅  ${notes.length} notas · ${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')} · ${savedName}`;
+      const groups=new Set(notes.map(n=>n.group)).size;
+      document.getElementById('songInfo').textContent=`✅  ${notes.length} notas · ${groups} grupos · ${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')} · ${savedName}`;
       document.getElementById('btnPlay').disabled=false;
     }catch(err){document.getElementById('songInfo').textContent='❌ '+err.message}
   };
@@ -1718,7 +1385,7 @@ document.getElementById('btnPlay').addEventListener('click',()=>{
 });
 document.getElementById('btnPause').addEventListener('click',()=>{
   if(!G.playing||G.gameOver)return;
-  G.paused=true;document.getElementById('pauseOv').classList.add('show');
+  G.paused=true;stopAllNotes();document.getElementById('pauseOv').classList.add('show');
 });
 document.getElementById('pm-resume').addEventListener('click',()=>{
   G.paused=false;document.getElementById('pauseOv').classList.remove('show');
@@ -1730,7 +1397,8 @@ document.getElementById('pm-restart').addEventListener('click',()=>{
   countdown(()=>startGame(savedNotes,savedName));
 });
 document.getElementById('pm-exit').addEventListener('click',()=>{
-  G.playing=false;G.paused=false;G.gameOver=false;cancelAnimationFrame(animId);
+  G.playing=false;G.paused=false;G.gameOver=false;
+  cancelAnimationFrame(animId);stopAllNotes();
   document.getElementById('pauseOv').classList.remove('show');
   document.getElementById('gameOverOv').classList.remove('show');
   document.getElementById('waitBar').style.display='none';
@@ -1749,23 +1417,8 @@ document.getElementById('btnReplay').addEventListener('click',()=>{
 });
 document.getElementById('btnResHome').addEventListener('click',()=>showScreen('homeScreen'));
 
-function launchFree(){
-  getAudio();
-  Object.assign(G,{mode:'free',playing:false,paused:false,gameOver:false,notes:[],elapsed:0,
-    spawnIdx:0,score:0,combo:0,hits:0,misses:0,waiting:false});
-  falling=[];chords=[];chordIdx=0;currentChord=null;
-  HP=MAX_HP;setHP(HP);
-  showScreen('gameScreen');resizeCvs();buildPiano();
-  document.getElementById('songTitleH').textContent='🎹 MODO LIBRE';
-  document.getElementById('waitBar').style.display='none';
-  document.getElementById('gameOverOv').classList.remove('show');
-  updHUD();
-  countdown(()=>{G.playing=true;G.startTime=performance.now();animId=requestAnimationFrame(loop);});
-}
-
 document.addEventListener('keydown',e=>{
-  if(e.code==='Space'){
-    e.preventDefault();
+  if(e.code==='Space'){e.preventDefault();
     if(G.gameOver)return;
     if(G.playing&&!G.paused)document.getElementById('btnPause').click();
     else if(G.paused)document.getElementById('pm-resume').click();
@@ -1774,39 +1427,46 @@ document.addEventListener('keydown',e=>{
     if(G.paused)document.getElementById('pm-exit').click();
     else if(G.playing&&!G.gameOver)document.getElementById('btnPause').click();
   }
-  if(e.code==='KeyR'&&G.paused)document.getElementById('pm-restart').click();
+  // Keyboard shortcuts: 1-7 trigger keys
+  const idx='1234567'.indexOf(e.key);
+  if(idx>=0&&G.playing&&!G.paused&&!G.gameOver){
+    const midNote=Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2);
+    getAudio();startNote(midNote,.72);
+    keyEls[idx]?.classList.add('pressed');
+    handleInput(idx);
+  }
+});
+document.addEventListener('keyup',e=>{
+  const idx='1234567'.indexOf(e.key);
+  if(idx>=0){
+    const midNote=Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2);
+    stopNote(midNote);
+    keyEls[idx]?.classList.remove('pressed');
+  }
 });
 
-// ═══════════════════════════════════════════════════
-//  HOME DECORATIVE KEYS ANIMATION
-// ═══════════════════════════════════════════════════
-function buildHomeKeys(){
-  const wrap=document.getElementById('homeKeys');
-  // One octave decoration
-  const pattern=[0,1,0,1,0,0,1,0,1,0,1,0]; // 0=white,1=black
-  const notes=[false,true,false,true,false,false,true,false,true,false,true,false];
-  notes.forEach((isB,i)=>{
-    const el=document.createElement('div');
-    el.className='hk '+(isB?'b':'w');
+// ── Home preview animation ──
+function buildHomePreview(){
+  const wrap=document.getElementById('homePreview');
+  wrap.innerHTML='';
+  KEY_GROUPS.forEach((kg,i)=>{
+    const el=document.createElement('div');el.className='hkp';
+    el.style.cssText=`background:linear-gradient(160deg,${shadeHex(kg.color,-40)},${kg.color});
+      box-shadow:0 4px 12px ${kg.glow.replace('.9','0.35')};border-radius:6px`;
     wrap.appendChild(el);
   });
-  // Animate random keys
-  const keys=wrap.querySelectorAll('.hk');
+  let idx=0;
   setInterval(()=>{
-    const k=keys[Math.floor(Math.random()*keys.length)];
-    k.classList.add('lit');setTimeout(()=>k.classList.remove('lit'),300);
-  },350);
+    const keys=wrap.querySelectorAll('.hkp');
+    keys.forEach(k=>k.classList.remove('lit'));
+    keys[idx%7].classList.add('lit');idx++;
+  },320);
 }
 
-function checkOrient(){
-  const h=document.getElementById('rotHint');
-  h.style.display=(window.innerWidth<window.innerHeight&&window.innerWidth<600)?'flex':'none';
-}
-window.addEventListener('resize',()=>{buildPiano();resizeCvs();checkOrient()});
-window.addEventListener('orientationchange',()=>setTimeout(()=>{buildPiano();resizeCvs();checkOrient()},300));
-
+window.addEventListener('resize',()=>{buildPiano();resizeCvs();});
+window.addEventListener('orientationchange',()=>setTimeout(()=>{buildPiano();resizeCvs();},300));
 window.addEventListener('load',()=>{
-  buildPiano();initCanvas();checkOrient();buildHomeKeys();
+  buildPiano();initCanvas();buildHomePreview();
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 });
 </script>
