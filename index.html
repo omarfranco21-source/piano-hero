@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -214,51 +214,10 @@ input[type=range]::-webkit-slider-thumb{
 /* ═══════════════ GUITAR HERO STAGE ═══════════════ */
 #stageWrap{
   flex:1;position:relative;overflow:hidden;min-height:0;
-  /* 3D perspective stage */
-  perspective:900px;
+  background:#02020a;
 }
 
-/* Background: dark concert hall texture */
-#stageBg{
-  position:absolute;inset:0;z-index:0;
-  background:
-    radial-gradient(ellipse 120% 60% at 50% -10%,rgba(60,0,120,.5) 0%,transparent 70%),
-    radial-gradient(ellipse 80% 40% at 20% 80%,rgba(200,0,50,.08) 0%,transparent 60%),
-    radial-gradient(ellipse 80% 40% at 80% 80%,rgba(0,50,200,.08) 0%,transparent 60%),
-    repeating-linear-gradient(
-      160deg,
-      rgba(255,255,255,.012) 0px,rgba(255,255,255,.012) 1px,
-      transparent 1px,transparent 40px
-    ),
-    linear-gradient(180deg,#0a0015 0%,#050510 50%,#080810 100%);
-}
-
-/* Crowd/stage lights at top */
-#stageLights{
-  position:absolute;top:0;left:0;right:0;height:35%;z-index:1;pointer-events:none;
-  background:
-    radial-gradient(ellipse 30% 60% at 20% 0%,rgba(255,100,0,.18) 0%,transparent 65%),
-    radial-gradient(ellipse 25% 50% at 50% 0%,rgba(100,0,255,.22) 0%,transparent 60%),
-    radial-gradient(ellipse 30% 60% at 80% 0%,rgba(0,180,255,.18) 0%,transparent 65%);
-  animation:lightsMove 4s ease-in-out infinite alternate;
-}
-@keyframes lightsMove{
-  0%{filter:hue-rotate(0deg) brightness(1)}
-  50%{filter:hue-rotate(30deg) brightness(1.2)}
-  100%{filter:hue-rotate(-20deg) brightness(.9)}
-}
-
-/* The lane/highway — Guitar Hero style */
-#highway{
-  position:absolute;
-  left:0;right:0;bottom:0;
-  height:100%;
-  z-index:2;
-  /* perspective transform: narrow at top, wide at bottom */
-  transform-origin:bottom center;
-}
-
-/* Lane canvas — renders the 3D highway + falling note blocks */
+/* Lane canvas — full stage rendered in JS */
 #laneCanvas{
   position:absolute;inset:0;width:100%;height:100%;
   display:block;z-index:3;
@@ -267,7 +226,7 @@ input[type=range]::-webkit-slider-thumb{
 /* Feedback text */
 #feedback{
   position:absolute;
-  top:25%;left:50%;transform:translateX(-50%);
+  top:22%;left:50%;transform:translateX(-50%);
   font-family:'Orbitron',monospace;
   font-size:clamp(18px,4vw,32px);font-weight:900;
   pointer-events:none;opacity:0;transition:opacity .08s;
@@ -277,9 +236,6 @@ input[type=range]::-webkit-slider-thumb{
 
 /* Screen flash */
 #flash{position:absolute;inset:0;pointer-events:none;z-index:35;opacity:0;}
-
-/* Miss flash */
-#missFlash{position:absolute;inset:0;pointer-events:none;z-index:34;opacity:0;background:rgba(255,0,0,.3);}
 
 /* ── Piano keyboard — INVERTED (black on top, white hang down) ── */
 #pianoWrapper{
@@ -536,16 +492,11 @@ input[type=range]::-webkit-slider-thumb{
 
   <div id="waitBar"><div id="waitText">⏸ TOCA LAS TECLAS DORADAS</div></div>
 
-  <!-- Stage: background + 3D highway canvas -->
+  <!-- Stage: Guitar Hero 3D highway (all drawn on single canvas) -->
   <div id="stageWrap">
-    <div id="stageBg"></div>
-    <div id="stageLights"></div>
-    <div id="highway">
-      <canvas id="laneCanvas"></canvas>
-    </div>
+    <canvas id="laneCanvas"></canvas>
     <div id="feedback"></div>
     <div id="flash"></div>
-    <div id="missFlash"></div>
   </div>
 
   <!-- Inverted piano keyboard -->
@@ -804,266 +755,481 @@ function getKeyX(midi){
 }
 
 // ═══════════════════════════════════════════════════
-//  GUITAR HERO STAGE RENDERER
+// ═══════════════════════════════════════════════════
+//  GUITAR HERO PERSPECTIVE STAGE RENDERER
 // ═══════════════════════════════════════════════════
 /*
-  The "highway" is drawn on a canvas.
-  - Notes fall from top → hit zone at bottom
-  - Each note is mapped to an X position corresponding to its piano key
-  - We draw a perspective-grid lane beneath the notes
-  - Note blocks are colored by track with rounded-rect Guitar Hero style
-  - Hit zone = glowing horizontal bar near bottom of canvas
+  TRUE 3D PERSPECTIVE — like Guitar Hero / Rock Band
+  ─────────────────────────────────────────────────
+  - One canvas fills the entire stageWrap
+  - The "highway" is a trapezoid: narrow at top (vanishing point), wide at bottom
+  - The visible piano key range defines the lane width at the bottom
+  - Notes are blocks that start tiny at the top and grow as they approach
+  - Hit zone is at the BOTTOM of the canvas, matching the piano keys
+  - Each note's X position maps to its piano key column via perspective projection
+
+  COORDINATE SYSTEM
+  ─────────────────
+  VP = vanishing point  (cx, vpY)   — somewhere above the canvas top
+  HIT_Y = bottom hit line            — near the canvas bottom
+  
+  For any "song time" offset t (ms until the note hits):
+    p = t / LOOKAHEAD_MS            — 0 = at hit zone, 1 = at vanishing point
+    screenY = mix(HIT_Y, vpY, p)    — lerp
+    screenX = mix(noteKeyX, cx, p)  — converge to center
+    width   = mix(keyW, 0, p)       — shrink to zero at VP
+
+  This gives perfect perspective without any CSS 3D transforms.
 */
+
 let laneCanvas, lctx;
 let stageW=0, stageH=0;
 
-// Color palettes per track (Guitar Hero feel)
+// ── Note color palette (6 colors cycling by track) ──
 const NOTE_COLORS=[
-  // track 0 — blue
-  {body:'#1a6aff',top:'#5596ff',glow:'#4488ff',shadow:'rgba(30,100,255,.7)'},
-  // track 1 — green
-  {body:'#1fc71f',top:'#50ff50',glow:'#39ff14',shadow:'rgba(30,200,30,.7)'},
-  // track 2 — red/pink
-  {body:'#cc1a50',top:'#ff4488',glow:'#ff2d78',shadow:'rgba(255,30,100,.7)'},
-  // track 3 — yellow/gold
-  {body:'#cc8800',top:'#ffcc00',glow:'#ffaa00',shadow:'rgba(255,180,0,.7)'},
-  // track 4 — purple
-  {body:'#6a1aaa',top:'#aa50ff',glow:'#9040ff',shadow:'rgba(140,50,255,.7)'},
-  // track 5 — orange
-  {body:'#cc4400',top:'#ff8833',glow:'#ff6600',shadow:'rgba(255,100,0,.7)'},
+  {hi:'#66aaff',mid:'#1155ee',lo:'#0033aa',glow:'rgba(80,140,255,.9)'},
+  {hi:'#66ff88',mid:'#11bb33',lo:'#006622',glow:'rgba(60,220,90,.9)'},
+  {hi:'#ff6699',mid:'#ee1144',lo:'#880022',glow:'rgba(255,60,100,.9)'},
+  {hi:'#ffee66',mid:'#ddaa00',lo:'#886600',glow:'rgba(255,210,50,.9)'},
+  {hi:'#cc88ff',mid:'#8822ee',lo:'#440088',glow:'rgba(180,80,255,.9)'},
+  {hi:'#ff9944',mid:'#ee5500',lo:'#882200',glow:'rgba(255,120,50,.9)'},
 ];
+
+// How far ahead (in ms) the highway shows
+const LOOKAHEAD_MS = 3000;
 
 function initCanvas(){
   laneCanvas=document.getElementById('laneCanvas');
   lctx=laneCanvas.getContext('2d');
   resizeCvs();
 }
+
 function resizeCvs(){
   const sw=document.getElementById('stageWrap');
   stageW=sw.clientWidth||window.innerWidth;
   stageH=sw.clientHeight||300;
-  laneCanvas.width=stageW;laneCanvas.height=stageH;
+  laneCanvas.width=stageW;
+  laneCanvas.height=stageH;
 }
 
-// Guitar Hero perspective: map note x-position on piano to lane x-position on screen
-// Piano scroll offset must be accounted for
-function laneX(midi){
-  const scroll=document.getElementById('pianoScroll').scrollLeft;
-  const kx=isBlack(midi)?
-    (keyEls[midi]?parseFloat(keyEls[midi].style.left)+BW/2:0):
-    ((wMap[midi]??0)+WW/2);
-  return kx-scroll;
+// Vanishing point Y — sits above the canvas to create depth illusion
+function getVPY(){ return -stageH * 0.15; }
+// Hit line Y (slightly above canvas bottom)
+function getHitY(){ return stageH * 0.92; }
+// Center X of screen
+function getCX(){ return stageW * 0.5; }
+
+// Piano scroll offset
+function getScroll(){ return document.getElementById('pianoScroll').scrollLeft; }
+
+// Physical X center of a key on the piano strip (in screen coords after scroll)
+function keyPhysX(midi){
+  if(!isBlack(midi)) return (wMap[midi]??0) + WW/2 - getScroll();
+  const el=keyEls[midi];
+  return el ? parseFloat(el.style.left)+BW/2 - getScroll() : getCX();
+}
+// Physical width of a key
+function keyPhysW(midi){ return isBlack(midi) ? BW : WW; }
+
+// ── Perspective projection ──
+// t_ms = ms until note hits (0 = at hit line, LOOKAHEAD_MS = at vanishing point)
+// returns {x, y, w, alpha}
+function project(midi, t_ms){
+  const p  = Math.max(0, Math.min(1, t_ms / LOOKAHEAD_MS));
+  const vp = getVPY(), hy = getHitY(), cx = getCX();
+  const kx = keyPhysX(midi);
+  const kw = keyPhysW(midi);
+
+  // ease the perspective curve slightly so notes don't disappear too fast at top
+  const pe = Math.pow(p, 0.75);
+
+  const y = hy + (vp - hy) * pe;
+  const x = kx + (cx - kx) * pe;
+  const w = kw * (1 - pe * 0.92);          // at VP width is ~8% of key width
+
+  return { x, y, w, p: pe };
 }
 
-// Width of note block on screen (roughly proportional to key width)
-function laneW(midi){
-  return isBlack(midi)?BW*1.2:WW*1.1;
-}
-
-// HIT_Y: where notes land (bottom of fall area, just above piano)
-function getHitY(){return stageH*0.88;}
-
-// Note falls from y= -noteHeight to y= hitY
-// Time until note hits: (n.startMs - elapsed) ms
-// pixels per ms:
-const BASE_PX_PER_MS=0.32;
-
+// ── MAIN DRAW ──
 function drawStage(){
-  if(!lctx)return;
-  lctx.clearRect(0,0,stageW,stageH);
+  if(!lctx) return;
+  lctx.clearRect(0, 0, stageW, stageH);
 
-  const hitY=getHitY();
-  const scroll=document.getElementById('pianoScroll').scrollLeft;
+  const t = performance.now() * 0.001;
 
-  // ── Draw perspective lane grid ──
-  drawLaneGrid(hitY);
+  // 1. Background
+  drawBackground(t);
 
-  // ── Draw falling note blocks ──
-  const PX_MS=BASE_PX_PER_MS*G.speed*60;
+  // 2. Highway (perspective lane)
+  drawHighway(t);
+
+  // 3. Note blocks
+  drawNotes();
+
+  // 4. Hit zone buttons
+  drawHitZone();
+}
+
+// ── BACKGROUND ──
+function drawBackground(t){
+  // Dark stage gradient
+  const bg = lctx.createLinearGradient(0,0,0,stageH);
+  bg.addColorStop(0, '#02020a');
+  bg.addColorStop(0.5, '#05050f');
+  bg.addColorStop(1, '#08081a');
+  lctx.fillStyle = bg;
+  lctx.fillRect(0, 0, stageW, stageH);
+
+  // Concert lights beaming from top — animated
+  const lights = [
+    { x: stageW*0.15, color:'rgba(255,80,0,', intensity: 0.10 },
+    { x: stageW*0.35, color:'rgba(80,0,255,', intensity: 0.12 },
+    { x: stageW*0.50, color:'rgba(255,255,100,', intensity: 0.08 },
+    { x: stageW*0.65, color:'rgba(0,180,255,', intensity: 0.12 },
+    { x: stageW*0.85, color:'rgba(255,0,120,', intensity: 0.10 },
+  ];
+  lights.forEach((l,i)=>{
+    const pulse = 0.6 + 0.4*Math.sin(t * 1.1 + i * 1.3);
+    const alpha = l.intensity * pulse;
+    const grad = lctx.createRadialGradient(l.x, 0, 0, l.x, stageH*0.6, stageW*0.3);
+    grad.addColorStop(0, l.color + alpha + ')');
+    grad.addColorStop(1, l.color + '0)');
+    lctx.fillStyle = grad;
+    lctx.fillRect(0, 0, stageW, stageH);
+  });
+
+  // Crowd silhouette at very top
+  drawCrowd();
+}
+
+function drawCrowd(){
+  const h = stageH * 0.18;
+  lctx.save();
+  lctx.fillStyle = 'rgba(0,0,0,.7)';
+  lctx.fillRect(0, 0, stageW, h);
+
+  // Simple crowd bumps
+  lctx.fillStyle = 'rgba(20,10,35,.9)';
+  lctx.beginPath();
+  lctx.moveTo(0, h);
+  for(let x=0; x<=stageW; x+=18){
+    const bumpH = 8 + 6*Math.sin(x*0.08 + performance.now()*0.001);
+    lctx.arc(x, h - bumpH*0.5, 9, Math.PI, 0);
+  }
+  lctx.lineTo(stageW, 0);lctx.lineTo(0,0);lctx.closePath();lctx.fill();
+
+  // Crowd glow dots (raised phones / lighters)
+  const now = performance.now()*0.001;
+  for(let i=0; i<40; i++){
+    const bx = (i/40)*stageW + 8*Math.sin(now*0.5+i);
+    const by = h*0.3 + (h*0.4)*(i%3)/3;
+    const br = 1.5 + Math.sin(now*2+i*0.7);
+    const alpha = 0.4 + 0.5*Math.sin(now*1.5+i*0.9);
+    const cols = ['rgba(255,255,255,','rgba(0,200,255,','rgba(255,200,0,'];
+    const g = lctx.createRadialGradient(bx,by,0,bx,by,br*3);
+    g.addColorStop(0, cols[i%3]+alpha+')');
+    g.addColorStop(1, cols[i%3]+'0)');
+    lctx.fillStyle = g;
+    lctx.beginPath();lctx.arc(bx,by,br*3,0,Math.PI*2);lctx.fill();
+  }
+  lctx.restore();
+}
+
+// ── HIGHWAY ──
+function drawHighway(t){
+  const vpy = getVPY(), hity = getHitY(), cx = getCX();
+  const scroll = getScroll();
+
+  // The highway width at the bottom = visible piano range
+  // Left edge = leftmost visible key, right edge = rightmost visible key
+  const visLeft  = -scroll;
+  const visRight = stageW - scroll;   // in piano coords
+  // Clamp to actual piano range
+  const leftX  = Math.max(0, visLeft)  - scroll + (wMap[START]??0) - scroll;
+  const rightX = stageW; // just use screen width
+
+  // Lane trapezoid
+  const lBot = 0,          rBot = stageW;
+  const lTop = cx - 2,     rTop = cx + 2;  // near-zero width at VP
+
+  // Fill lane floor with dark textured gradient
+  lctx.save();
+  lctx.beginPath();
+  lctx.moveTo(lTop, vpy);
+  lctx.lineTo(rTop, vpy);
+  lctx.lineTo(rBot, hity);
+  lctx.lineTo(lBot, hity);
+  lctx.closePath();
+
+  const laneGrad = lctx.createLinearGradient(0, vpy, 0, hity);
+  laneGrad.addColorStop(0,   'rgba(10,10,40,.0)');
+  laneGrad.addColorStop(0.4, 'rgba(15,15,55,.5)');
+  laneGrad.addColorStop(1,   'rgba(20,20,70,.85)');
+  lctx.fillStyle = laneGrad;
+  lctx.fill();
+
+  // ── Grid lines rushing toward player ──
+  // Horizontal beat lines
+  const BEAT_MS = 500;  // ~120bpm approximation for visual
+  const beatOffset = (G.elapsed % BEAT_MS) / BEAT_MS;
+  for(let b=0; b<12; b++){
+    const frac = (b/12 + beatOffset) % 1;
+    const ms = frac * LOOKAHEAD_MS;
+    const { y } = project(60 /* dummy midi */, ms);  // just need Y
+    const xLeft  = cx + (lBot - cx) * Math.pow(frac, 0.75);
+    const xRight = cx + (rBot - cx) * Math.pow(frac, 0.75);
+    const alpha = 0.03 + 0.08 * (1-frac);
+    lctx.strokeStyle = `rgba(100,150,255,${alpha})`;
+    lctx.lineWidth = frac * 2;
+    lctx.beginPath();lctx.moveTo(xLeft,y);lctx.lineTo(xRight,y);lctx.stroke();
+  }
+
+  // Vertical lane dividers — project each visible white key boundary
+  lctx.strokeStyle = 'rgba(60,80,160,.15)';
+  lctx.lineWidth = 1;
+  for(let m=START; m<START+TOTAL; m++){
+    if(isBlack(m)) continue;
+    const kx = (wMap[m]??0) - scroll;
+    if(kx < -WW || kx > stageW+WW) continue;
+    // Project the lane line from hitY to VP
+    const bx = kx;  // at hit zone
+    const tx = cx + (bx-cx)*0.04;  // near VP (95% toward center)
+    lctx.beginPath();
+    lctx.moveTo(tx, vpy+stageH*0.05);
+    lctx.lineTo(bx, hity);
+    lctx.stroke();
+  }
+
+  // Center stripe
+  const cgrad = lctx.createLinearGradient(0,vpy,0,hity);
+  cgrad.addColorStop(0,'rgba(100,150,255,0)');
+  cgrad.addColorStop(1,'rgba(100,150,255,.08)');
+  lctx.strokeStyle=cgrad;lctx.lineWidth=2;
+  lctx.beginPath();lctx.moveTo(cx,vpy);lctx.lineTo(cx,hity);lctx.stroke();
+
+  // Side edges of the lane — bright lines
+  [[lTop,rTop],[lBot,rBot]].forEach(()=>{});
+  const drawEdge=(tx,bx,bright)=>{
+    const eg=lctx.createLinearGradient(tx,vpy,bx,hity);
+    eg.addColorStop(0,'rgba(0,200,255,0)');
+    eg.addColorStop(0.3,'rgba(0,200,255,.3)');
+    eg.addColorStop(1,`rgba(0,200,255,${bright})`);
+    lctx.strokeStyle=eg;lctx.lineWidth=bright>0.4?2:1;
+    lctx.beginPath();lctx.moveTo(tx,vpy);lctx.lineTo(bx,hity);lctx.stroke();
+  };
+  drawEdge(lTop,lBot,0.5);
+  drawEdge(rTop,rBot,0.5);
+
+  lctx.restore();
+}
+
+// ── NOTE BLOCKS ──
+function drawNotes(){
+  if(!G.playing && !G.gameOver) return;
+
+  // Sort notes by p (farthest first, so close notes render on top)
+  const visible = [];
   for(const fn of falling){
-    if(fn.removed||fn.hit)continue;
-    const col=NOTE_COLORS[fn.track%NOTE_COLORS.length];
-    const nx=laneX(fn.midi);
-    const nw=laneW(fn.midi);
-    const nh=Math.max(12,(fn.endMs-fn.startMs)*PX_MS);
-    // top of block: hitY - (startMs-elapsed)*PX_MS - nh
-    const ny=hitY-(fn.startMs-G.elapsed)*PX_MS-nh;
-    const nb=ny+nh; // bottom
+    if(fn.removed || fn.hit) continue;
+    const t_ms = fn.startMs - G.elapsed;
+    if(t_ms > LOOKAHEAD_MS + 200) continue; // too far
+    const proj = project(fn.midi, t_ms);
+    if(proj.y > stageH + 60) continue; // below screen
+    visible.push({fn, proj, t_ms});
+  }
+  // Draw farthest first
+  visible.sort((a,b)=>a.proj.p - b.proj.p);
 
-    if(nb<-20||ny>stageH+20)continue;
+  for(const {fn, proj, t_ms} of visible){
+    const col = NOTE_COLORS[fn.track % NOTE_COLORS.length];
 
-    // Clamp to canvas
-    const drawY=Math.max(-10,ny);
-    const drawH=Math.min(stageH+10,nb)-drawY;
-    if(drawH<2)continue;
+    // Note block: from startMs to endMs
+    const projTop  = project(fn.midi, t_ms);
+    const projBot  = project(fn.midi, fn.endMs - G.elapsed);
 
-    const x=nx-nw/2;
+    const x  = projTop.x;
+    const y  = projTop.y;
+    const x2 = projBot.x;
+    const y2 = projBot.y;
+    const w1 = projTop.w;
+    const w2 = projBot.w;
 
-    // Glow / shadow
+    if(y2 < getVPY() - 20) continue;
+    if(y  > stageH + 20)   continue;
+
     lctx.save();
-    lctx.shadowColor=col.glow;
-    lctx.shadowBlur=20;
 
-    // Body gradient
-    const grd=lctx.createLinearGradient(x,drawY,x,drawY+drawH);
-    grd.addColorStop(0,col.top);
-    grd.addColorStop(0.4,col.body);
-    grd.addColorStop(1,shadeColor(col.body,-50));
-    lctx.fillStyle=grd;
-    roundRect(lctx,x,drawY,nw,drawH,6);
-    lctx.fill();
+    // Glow shadow
+    lctx.shadowColor = col.glow;
+    lctx.shadowBlur  = 14 + (1-projTop.p)*18;
 
-    // Top shine strip
-    lctx.shadowBlur=0;
-    lctx.fillStyle='rgba(255,255,255,.35)';
-    roundRect(lctx,x+2,drawY+2,nw-4,Math.min(9,drawH*.2),4);
-    lctx.fill();
-
-    // Side edge highlight (Guitar Hero detail)
-    const egrad=lctx.createLinearGradient(x,0,x+nw,0);
-    egrad.addColorStop(0,'rgba(255,255,255,.18)');
-    egrad.addColorStop(0.5,'rgba(255,255,255,0)');
-    egrad.addColorStop(1,'rgba(0,0,0,.18)');
-    lctx.fillStyle=egrad;
-    roundRect(lctx,x,drawY,nw,drawH,6);
-    lctx.fill();
-
-    // Bottom cap (glowing "button" end)
-    if(nb>=hitY-80&&nb<=stageH+20){
-      const alpha=Math.max(0,1-(hitY-nb)/80);
-      lctx.fillStyle=`rgba(255,255,255,${alpha*.25})`;
-      roundRect(lctx,x+1,drawY+drawH-6,nw-2,6,4);
-      lctx.fill();
-    }
+    // Draw trapezoid note block (perspective-correct)
+    drawNoteTrap(x, y, w1, x2, y2, w2, col, projTop.p);
 
     lctx.restore();
   }
-
-  // ── Draw hit zone (Guitar Hero style hit bar) ──
-  drawHitZone(hitY);
 }
 
-function drawLaneGrid(hitY){
-  const cw=stageW,ch=stageH;
-  // Vertical lane separator lines following perspective
-  // We use the piano keys visible on screen to draw lane lines
-  const scroll=document.getElementById('pianoScroll').scrollLeft;
-  const VP_X=cw/2; // vanishing point x
-  const VP_Y=-stageH*0.6; // vanishing point (above screen)
-  const FLOOR_Y=hitY;
+function drawNoteTrap(x1,y1,w1, x2,y2,w2, col, p){
+  // Clamp to visible range
+  const hy = getHitY();
+  const vpy = getVPY();
 
-  // draw subtle grid lines fanning from vanishing point
-  lctx.save();
-  lctx.strokeStyle='rgba(80,120,255,.08)';
-  lctx.lineWidth=1;
-  const cols=Math.ceil(cw/50)+2;
-  for(let i=-2;i<=cols;i++){
-    const bx=i*(cw/cols);
+  // Note body — trapezoid
+  lctx.beginPath();
+  lctx.moveTo(x1-w1/2, y1);
+  lctx.lineTo(x1+w1/2, y1);
+  lctx.lineTo(x2+w2/2, y2);
+  lctx.lineTo(x2-w2/2, y2);
+  lctx.closePath();
+
+  // gradient from bright top to dark bottom
+  const g = lctx.createLinearGradient(x1,y1,x2,y2);
+  g.addColorStop(0, col.hi);
+  g.addColorStop(0.35, col.mid);
+  g.addColorStop(1, col.lo);
+  lctx.fillStyle = g;
+  lctx.fill();
+
+  // Top edge shine (the "cap" of the block)
+  lctx.shadowBlur = 0;
+  const capH = Math.max(3, w1*0.18);
+  lctx.beginPath();
+  lctx.moveTo(x1-w1/2, y1);
+  lctx.lineTo(x1+w1/2, y1);
+  lctx.lineTo(x1+w1/2, y1+capH);
+  lctx.lineTo(x1-w1/2, y1+capH);
+  lctx.closePath();
+  lctx.fillStyle = 'rgba(255,255,255,.45)';
+  lctx.fill();
+
+  // Bottom glow cap when near hit zone
+  const dist = Math.abs(y2 - hy);
+  if(dist < 80){
+    const alpha = 1 - dist/80;
     lctx.beginPath();
-    lctx.moveTo(VP_X+(bx-VP_X)*(-VP_Y/(FLOOR_Y-VP_Y)),VP_Y);
-    lctx.lineTo(bx,FLOOR_Y);
-    lctx.stroke();
+    lctx.moveTo(x2-w2/2, y2-capH);
+    lctx.lineTo(x2+w2/2, y2-capH);
+    lctx.lineTo(x2+w2/2, y2);
+    lctx.lineTo(x2-w2/2, y2);
+    lctx.closePath();
+    lctx.fillStyle = `rgba(255,255,255,${alpha*.4})`;
+    lctx.fill();
   }
 
-  // horizontal speed lines (rushing toward player)
-  const t=performance.now()*0.001;
-  lctx.strokeStyle='rgba(60,100,255,.06)';
-  const lines=8;
-  for(let i=0;i<lines;i++){
-    const p=((i/lines+t*0.18)%1);
-    const ly=FLOOR_Y*p; // 0 at top vanish, FLOOR_Y at bottom
-    const spreadFactor=p;
-    const x1=VP_X-(cw*spreadFactor*0.55);
-    const x2=VP_X+(cw*spreadFactor*0.55);
-    lctx.lineWidth=p*2;
-    lctx.beginPath();lctx.moveTo(x1,ly);lctx.lineTo(x2,ly);lctx.stroke();
-  }
-
-  // Dark floor gradient behind hit zone
-  const flr=lctx.createLinearGradient(0,hitY-40,0,ch);
-  flr.addColorStop(0,'rgba(0,0,0,0)');
-  flr.addColorStop(1,'rgba(0,0,0,.65)');
-  lctx.fillStyle=flr;
-  lctx.fillRect(0,hitY-40,cw,ch-(hitY-40));
-
-  lctx.restore();
+  // Left/right edge shading
+  lctx.beginPath();
+  lctx.moveTo(x1-w1/2,y1);lctx.lineTo(x2-w2/2,y2);
+  lctx.lineTo(x2-w2/2+1,y2);lctx.lineTo(x1-w1/2+1,y1);
+  lctx.closePath();
+  lctx.fillStyle='rgba(255,255,255,.12)';lctx.fill();
 }
 
-function drawHitZone(hitY){
-  const cw=stageW;
+// ── HIT ZONE ──
+function drawHitZone(){
+  const hy = getHitY();
+  const cw = stageW;
+  const scroll = getScroll();
   lctx.save();
 
-  // Main hit line (bright)
-  const grad=lctx.createLinearGradient(0,0,cw,0);
-  grad.addColorStop(0,'rgba(0,245,255,0)');
-  grad.addColorStop(0.1,'rgba(0,245,255,.9)');
-  grad.addColorStop(0.5,'rgba(120,180,255,1)');
-  grad.addColorStop(0.9,'rgba(0,245,255,.9)');
-  grad.addColorStop(1,'rgba(0,245,255,0)');
-  lctx.strokeStyle=grad;
-  lctx.lineWidth=3;
-  lctx.shadowColor='#00f5ff';lctx.shadowBlur=20;
-  lctx.beginPath();lctx.moveTo(0,hitY);lctx.lineTo(cw,hitY);lctx.stroke();
+  // Background glow above hit line
+  const glowGrad = lctx.createLinearGradient(0, hy-60, 0, hy+20);
+  glowGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  glowGrad.addColorStop(1, 'rgba(0,10,30,.8)');
+  lctx.fillStyle = glowGrad;
+  lctx.fillRect(0, hy-60, cw, 80);
 
-  // Glow below hit line
-  const glw=lctx.createLinearGradient(0,hitY,0,hitY+50);
-  glw.addColorStop(0,'rgba(0,200,255,.15)');glw.addColorStop(1,'rgba(0,0,0,0)');
-  lctx.fillStyle=glw;lctx.fillRect(0,hitY,cw,50);
-  lctx.shadowBlur=0;
+  // Main hit line
+  const lineGrad = lctx.createLinearGradient(0, 0, cw, 0);
+  lineGrad.addColorStop(0,   'rgba(0,220,255,0)');
+  lineGrad.addColorStop(0.08,'rgba(0,220,255,.85)');
+  lineGrad.addColorStop(0.5, 'rgba(140,200,255,1)');
+  lineGrad.addColorStop(0.92,'rgba(0,220,255,.85)');
+  lineGrad.addColorStop(1,   'rgba(0,220,255,0)');
+  lctx.strokeStyle = lineGrad;
+  lctx.lineWidth = 3;
+  lctx.shadowColor = '#00ddff'; lctx.shadowBlur = 20;
+  lctx.beginPath();lctx.moveTo(0,hy);lctx.lineTo(cw,hy);lctx.stroke();
+  lctx.shadowBlur = 0;
 
-  // Draw button targets: one per visible piano key
-  drawHitButtons(hitY);
+  // Subtle glow strip below
+  const strip = lctx.createLinearGradient(0,hy,0,hy+40);
+  strip.addColorStop(0,'rgba(0,200,255,.12)');
+  strip.addColorStop(1,'rgba(0,0,0,0)');
+  lctx.fillStyle=strip; lctx.fillRect(0,hy,cw,40);
+
+  // Draw GH-style oval buttons at each visible key position
+  drawButtons(hy);
 
   lctx.restore();
 }
 
-// Draw Guitar Hero-style "buttons" at the hit zone for each key
-function drawHitButtons(hitY){
-  const scroll=document.getElementById('pianoScroll').scrollLeft;
-  const cw=stageW;
-  const R=Math.min(WW*0.42,14);
-
-  // Find which midi notes have a falling note nearby (within 200ms)
-  const hotKeys=new Set();
+function drawButtons(hy){
+  // Find keys with notes about to hit (within ±200ms)
+  const hotKeys = new Map(); // midi -> col
   for(const fn of falling){
     if(fn.removed||fn.hit)continue;
-    if(Math.abs(fn.startMs-G.elapsed)<250)hotKeys.add(fn.midi);
+    const dt = fn.startMs - G.elapsed;
+    if(Math.abs(dt) < 220){
+      hotKeys.set(fn.midi, NOTE_COLORS[fn.track%NOTE_COLORS.length]);
+    }
   }
 
-  // Draw a button for each white key in view, black keys on top
-  const drawKey=(midi,bk)=>{
-    const kx=laneX(midi);
-    if(kx<-30||kx>cw+30)return;
-    const col=NOTE_COLORS[(midi%5+5)%5]; // color by pitch class
-    const isHot=hotKeys.has(midi);
-    const isPr=keyEls[midi]&&keyEls[midi].classList.contains('pressed');
+  const cw = stageW;
+  const rW = isBlack(0)?BW:WW;
+  const RX = Math.min(WW*0.44, 15);  // oval half-width
+  const RY = RX * 0.55;              // oval half-height
+
+  const drawBtn = (midi, isB)=>{
+    const kx = keyPhysX(midi);
+    if(kx < -30 || kx > cw+30) return;
+    const hot = hotKeys.has(midi);
+    const col = hot ? hotKeys.get(midi) : null;
+    const pressed = keyEls[midi]?.classList.contains('pressed');
+    const bRX = isB ? RX*0.65 : RX;
+    const bRY = isB ? RY*0.65 : RY;
 
     lctx.save();
-    if(isHot||isPr){lctx.shadowColor=isPr?'#ffffff':col.glow;lctx.shadowBlur=isPr?30:18;}
+    if(hot || pressed){
+      lctx.shadowColor = pressed ? '#ffffff' : col.glow;
+      lctx.shadowBlur  = pressed ? 30 : 22;
+    }
 
     // Outer ring
-    lctx.beginPath();lctx.arc(kx,hitY,R,0,Math.PI*2);
-    lctx.strokeStyle=isHot?col.top:isPr?'#fff':'rgba(255,255,255,.25)';
-    lctx.lineWidth=isHot?2.5:1.5;
+    lctx.beginPath();
+    lctx.ellipse(kx, hy, bRX*1.15, bRY*1.15, 0, 0, Math.PI*2);
+    lctx.strokeStyle = hot ? col.hi : pressed ? '#fff' : 'rgba(100,120,200,.35)';
+    lctx.lineWidth   = hot ? 2.5 : pressed ? 3 : 1;
     lctx.stroke();
 
     // Inner fill
-    if(isHot||isPr){
-      const rg=lctx.createRadialGradient(kx,hitY,0,kx,hitY,R);
-      rg.addColorStop(0,isPr?'rgba(255,255,255,.8)':col.top+'cc');
-      rg.addColorStop(1,isPr?'rgba(255,255,255,.2)':col.body+'66');
-      lctx.fillStyle=rg;
-    }else{
-      lctx.fillStyle='rgba(255,255,255,.04)';
+    lctx.beginPath();
+    lctx.ellipse(kx, hy, bRX, bRY, 0, 0, Math.PI*2);
+    if(hot || pressed){
+      const rg = lctx.createRadialGradient(kx,hy-bRY*0.3,0,kx,hy,bRX);
+      rg.addColorStop(0, pressed ? 'rgba(255,255,255,.9)' : col.hi+'ee');
+      rg.addColorStop(1, pressed ? 'rgba(255,255,255,.3)' : col.mid+'88');
+      lctx.fillStyle = rg;
+    } else {
+      lctx.fillStyle = isB ?
+        'rgba(20,20,50,.8)' :
+        'rgba(40,40,80,.5)';
     }
-    lctx.beginPath();lctx.arc(kx,hitY,R*.85,0,Math.PI*2);lctx.fill();
+    lctx.fill();
+
+    // Center dot highlight
+    if(!hot && !pressed){
+      lctx.beginPath();
+      lctx.ellipse(kx, hy-bRY*0.25, bRX*0.35, bRY*0.3, 0, 0, Math.PI*2);
+      lctx.fillStyle='rgba(255,255,255,.08)';lctx.fill();
+    }
 
     lctx.restore();
   };
 
-  // whites first, then blacks (so blacks appear on top)
-  for(let m=START;m<START+TOTAL;m++){if(!isBlack(m))drawKey(m,false)}
-  for(let m=START;m<START+TOTAL;m++){if(isBlack(m))drawKey(m,true)}
+  // Draw whites first (underneath), then blacks on top
+  for(let m=START;m<START+TOTAL;m++){if(!isBlack(m)) drawBtn(m,false)}
+  for(let m=START;m<START+TOTAL;m++){if(isBlack(m))  drawBtn(m,true)}
 }
 
 function roundRect(ctx,x,y,w,h,r){
@@ -1172,18 +1338,15 @@ function loop(now){
     G.spawnIdx++;
   }
 
-  // Update miss detection (relax mode)
-  const PX_MS=BASE_PX_PER_MS*G.speed*60;
-  const hitY=getHitY();
+  // Update miss detection — time-based (note passed hit zone by >500ms)
   for(const fn of falling){
     if(fn.removed)continue;
-    const ph=Math.max(12,(fn.endMs-fn.startMs)*PX_MS);
-    const ny=hitY-(fn.startMs-G.elapsed)*PX_MS-ph;
-    if(!fn.hit&&!fn.missed&&G.mode==='relax'&&ny>stageH+60){
+    const msSinceStart = G.elapsed - fn.startMs;
+    if(!fn.hit&&!fn.missed&&G.mode==='relax'&&msSinceStart>500){
       fn.missed=true;fn.removed=true;
       G.misses++;G.combo=0;dmgHP(8);flashFB('✗ FALLADA',false,0);updHUD();
     }
-    if(fn.hit&&ny>stageH+100)fn.removed=true;
+    if(fn.hit&&msSinceStart>3000)fn.removed=true;
   }
 
   // Illuminate keys in relax mode
@@ -1296,11 +1459,10 @@ function scrollToChord(midis){
 }
 function spawnParts(midis){
   const fa=document.getElementById('stageWrap');
-  const scroll=document.getElementById('pianoScroll').scrollLeft;
   const hitY=getHitY();
   const cols=['#00f5ff','#ffcc00','#39ff14','#ff2d78','#4488ff','#ff7700','#fff'];
   midis.forEach(midi=>{
-    const x=laneX(midi);
+    const x=keyPhysX(midi);
     for(let i=0;i<12;i++){
       const p=document.createElement('div');p.className='prt';
       const sz=3+Math.random()*8;
