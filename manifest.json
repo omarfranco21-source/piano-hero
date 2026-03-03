@@ -1,0 +1,19 @@
+{
+  "name": "Piano MIDI",
+  "short_name": "PianoMIDI",
+  "description": "Juego de piano MIDI - toca cualquier canción",
+  "start_url": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "music"]
+}

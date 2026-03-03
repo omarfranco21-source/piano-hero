@@ -1,0 +1,1515 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+<meta name="apple-mobile-web-app-title" content="Piano Hero">
+<meta name="theme-color" content="#05050e">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<title>Piano Hero</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#05050e;
+  --cyan:#00f5ff;--green:#39ff14;--blue:#4a7fff;
+  --pink:#ff2d78;--gold:#ffcc00;--orange:#ff7700;
+}
+html,body{
+  width:100%;height:100%;background:var(--bg);color:#fff;
+  font-family:'Rajdhani',sans-serif;overflow:hidden;
+  -webkit-user-select:none;user-select:none;touch-action:none;
+}
+.screen{display:none;width:100%;height:100%}
+.screen.active{display:flex;flex-direction:column}
+
+/* ═══════════════ HOME ═══════════════ */
+#homeScreen{
+  position:relative;overflow:hidden;
+  align-items:center;justify-content:center;gap:20px;padding:24px 20px;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,80,200,.22) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 80% at 80% 100%,rgba(255,45,120,.14) 0%,transparent 60%),
+    var(--bg);
+}
+/* animated grid lines */
+#homeScreen::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 44px,rgba(0,200,255,.04) 45px),
+    repeating-linear-gradient(90deg,transparent,transparent 44px,rgba(0,200,255,.04) 45px);
+  animation:gridScroll 8s linear infinite;
+}
+@keyframes gridScroll{from{background-position:0 0,0 0}to{background-position:0 45px,0 0}}
+
+.logo-wrap{text-align:center;position:relative;z-index:1}
+.logo-main{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(30px,8vw,64px);font-weight:900;letter-spacing:5px;
+  background:linear-gradient(135deg,#fff 0%,var(--cyan) 40%,var(--blue) 70%,var(--pink) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 40px rgba(0,245,255,.6));
+}
+.logo-piano{
+  font-size:clamp(14px,2.5vw,22px);letter-spacing:12px;
+  color:rgba(255,255,255,.25);font-family:'Orbitron',monospace;
+  text-transform:uppercase;margin-top:4px;
+}
+/* animated keys decoration */
+.home-keys{
+  display:flex;gap:3px;align-items:flex-start;position:relative;z-index:1;
+}
+.hk{
+  width:clamp(18px,2.8vw,32px);
+  border-radius:0 0 5px 5px;
+  cursor:default;
+}
+.hk.w{
+  height:clamp(55px,9vw,90px);
+  background:linear-gradient(180deg,#b0b4cc 0%,#e8ecf8 30%,#d0d4e8 100%);
+  border:1px solid rgba(0,0,0,.25);border-bottom:4px solid rgba(0,0,0,.3);
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+.hk.b{
+  height:clamp(34px,5.5vw,56px);
+  width:clamp(12px,1.8vw,20px);
+  background:linear-gradient(180deg,#111124 0%,#1e1e3a 100%);
+  border:1px solid #000;border-bottom:3px solid #000;
+  margin:0 -6px;z-index:2;position:relative;
+  box-shadow:2px 3px 8px rgba(0,0,0,.9);
+}
+.hk.lit{box-shadow:0 0 20px var(--cyan),0 0 40px rgba(0,245,255,.4)!important;background:linear-gradient(180deg,rgba(0,245,255,.7),rgba(0,245,255,.3))!important}
+
+.upload-zone{
+  border:2px dashed rgba(0,245,255,.2);border-radius:16px;
+  padding:22px 36px;text-align:center;cursor:pointer;
+  background:rgba(0,245,255,.02);transition:all .3s;
+  max-width:440px;width:100%;position:relative;z-index:1;
+}
+.upload-zone:hover,.upload-zone.drag{
+  border-color:var(--cyan);background:rgba(0,245,255,.06);
+  box-shadow:0 0 50px rgba(0,245,255,.1),inset 0 0 30px rgba(0,245,255,.04);
+}
+.upload-zone .ico{font-size:36px;margin-bottom:8px}
+.upload-zone p{color:rgba(255,255,255,.45);font-size:13px;line-height:1.65}
+.upload-zone strong{color:var(--cyan)}
+#fileInput{display:none}
+#songInfo{font-size:12px;color:rgba(255,255,255,.38);text-align:center;min-height:16px;position:relative;z-index:1;}
+
+/* buttons */
+.btn{border:none;cursor:pointer;font-family:'Orbitron',monospace;font-weight:700;
+     letter-spacing:2px;text-transform:uppercase;border-radius:8px;transition:all .16s;}
+.btn-glow{
+  background:linear-gradient(135deg,var(--cyan),#0077aa);color:#000;
+  font-size:13px;padding:14px 38px;
+  box-shadow:0 0 30px rgba(0,245,255,.45),0 4px 20px rgba(0,0,0,.4);
+}
+.btn-glow:hover{box-shadow:0 0 50px rgba(0,245,255,.7),0 4px 20px rgba(0,0,0,.4);transform:translateY(-2px)}
+.btn-glow:active{transform:scale(.96)}
+.btn-glow:disabled{opacity:.25;pointer-events:none}
+.btn-out{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.16);
+  color:rgba(255,255,255,.55);font-size:11px;padding:10px 22px;
+}
+.btn-out:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,255,.06)}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center}
+
+.mode-row{display:flex;gap:4px;background:rgba(255,255,255,.05);border-radius:40px;padding:4px;position:relative;z-index:1;}
+.mode-btn{
+  background:transparent;border:none;cursor:pointer;
+  color:rgba(255,255,255,.36);font-family:'Rajdhani',sans-serif;
+  font-weight:600;font-size:14px;padding:7px 16px;border-radius:40px;transition:all .2s;
+}
+.mode-btn.on{background:rgba(0,245,255,.13);color:var(--cyan);box-shadow:0 0 14px rgba(0,245,255,.2);}
+.mode-desc{font-size:11px;letter-spacing:.5px;color:rgba(255,255,255,.26);text-align:center;min-height:16px;position:relative;z-index:1;}
+.ctrl-row{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+.ctrl-lbl{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.35)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:130px;height:3px;
+  background:rgba(255,255,255,.12);border-radius:3px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 10px var(--cyan);
+}
+.ctrl-v{font-family:'Orbitron',monospace;font-size:12px;color:var(--cyan);min-width:34px}
+
+/* ═══════════════ GAME SCREEN ═══════════════ */
+#gameScreen{background:var(--bg);position:relative}
+
+/* ── HUD top bar ── */
+#hud{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;height:52px;flex-shrink:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.5) 100%);
+  border-bottom:1px solid rgba(0,245,255,.08);
+  position:relative;z-index:40;backdrop-filter:blur(14px);gap:10px;
+}
+.hud-b{display:flex;flex-direction:column;align-items:center;min-width:52px}
+.hud-lbl{font-size:7px;letter-spacing:3px;color:rgba(255,255,255,.22);text-transform:uppercase}
+.hud-v{font-family:'Orbitron',monospace;font-size:18px;font-weight:700}
+#scoreV{color:var(--cyan)}
+#comboV{color:var(--gold)}
+
+/* health */
+#healthWrap{
+  flex:1;max-width:360px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+#healthTop{display:flex;justify-content:space-between;width:100%;align-items:center;}
+#healthLbl{font-size:7px;letter-spacing:3px;color:rgba(255,255,255,.28);text-transform:uppercase}
+#healthPct{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--green);transition:color .3s}
+#healthTrack{
+  width:100%;height:11px;
+  background:rgba(0,0,0,.5);
+  border-radius:8px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  position:relative;
+}
+#healthFill{
+  height:100%;width:100%;border-radius:8px;
+  background:linear-gradient(90deg,var(--green),#80ff50);
+  transition:width .15s ease-out,background .4s;
+  position:relative;
+}
+#healthFill::after{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:rgba(255,255,255,.3);border-radius:8px 8px 0 0}
+#healthTrack.danger #healthFill{background:linear-gradient(90deg,#cc0000,var(--pink));animation:hpPulse .35s ease-in-out infinite alternate}
+#healthTrack.warn  #healthFill{background:linear-gradient(90deg,#bb7700,var(--gold))}
+@keyframes hpPulse{from{box-shadow:0 0 4px #ff0000}to{box-shadow:0 0 22px #ff0000,0 0 44px rgba(255,0,0,.4)}}
+
+/* song info */
+.hud-center{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:90px;}
+#songTitleH{
+  font-family:'Orbitron',monospace;font-size:9px;color:rgba(255,255,255,.35);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;
+}
+#progBar{height:2px;background:rgba(255,255,255,.07);border-radius:2px;width:100%;min-width:90px;overflow:hidden}
+#progFill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0%;transition:width .1s linear}
+
+#btnPause{
+  flex-shrink:0;display:flex;align-items:center;gap:5px;
+  font-size:10px;padding:7px 12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;
+  color:rgba(255,255,255,.55);font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;
+  cursor:pointer;transition:all .14s;
+}
+#btnPause:hover{background:rgba(0,245,255,.08);border-color:rgba(0,245,255,.25);color:var(--cyan)}
+
+/* wait bar */
+#waitBar{
+  display:none;position:relative;height:38px;flex-shrink:0;z-index:25;
+  background:rgba(255,204,0,.05);border-bottom:1px solid rgba(255,204,0,.2);
+}
+#waitText{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;
+  color:var(--gold);text-shadow:0 0 10px var(--gold);
+  white-space:nowrap;animation:wPulse .9s ease-in-out infinite alternate;
+}
+@keyframes wPulse{from{opacity:.5}to{opacity:1}}
+
+/* ═══════════════ GUITAR HERO STAGE ═══════════════ */
+#stageWrap{
+  flex:1;position:relative;overflow:hidden;min-height:0;
+  /* 3D perspective stage */
+  perspective:900px;
+}
+
+/* Background: dark concert hall texture */
+#stageBg{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 120% 60% at 50% -10%,rgba(60,0,120,.5) 0%,transparent 70%),
+    radial-gradient(ellipse 80% 40% at 20% 80%,rgba(200,0,50,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 80% 40% at 80% 80%,rgba(0,50,200,.08) 0%,transparent 60%),
+    repeating-linear-gradient(
+      160deg,
+      rgba(255,255,255,.012) 0px,rgba(255,255,255,.012) 1px,
+      transparent 1px,transparent 40px
+    ),
+    linear-gradient(180deg,#0a0015 0%,#050510 50%,#080810 100%);
+}
+
+/* Crowd/stage lights at top */
+#stageLights{
+  position:absolute;top:0;left:0;right:0;height:35%;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 30% 60% at 20% 0%,rgba(255,100,0,.18) 0%,transparent 65%),
+    radial-gradient(ellipse 25% 50% at 50% 0%,rgba(100,0,255,.22) 0%,transparent 60%),
+    radial-gradient(ellipse 30% 60% at 80% 0%,rgba(0,180,255,.18) 0%,transparent 65%);
+  animation:lightsMove 4s ease-in-out infinite alternate;
+}
+@keyframes lightsMove{
+  0%{filter:hue-rotate(0deg) brightness(1)}
+  50%{filter:hue-rotate(30deg) brightness(1.2)}
+  100%{filter:hue-rotate(-20deg) brightness(.9)}
+}
+
+/* The lane/highway — Guitar Hero style */
+#highway{
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:100%;
+  z-index:2;
+  /* perspective transform: narrow at top, wide at bottom */
+  transform-origin:bottom center;
+}
+
+/* Lane canvas — renders the 3D highway + falling note blocks */
+#laneCanvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  display:block;z-index:3;
+}
+
+/* Feedback text */
+#feedback{
+  position:absolute;
+  top:25%;left:50%;transform:translateX(-50%);
+  font-family:'Orbitron',monospace;
+  font-size:clamp(18px,4vw,32px);font-weight:900;
+  pointer-events:none;opacity:0;transition:opacity .08s;
+  white-space:nowrap;text-shadow:0 0 30px currentColor;
+  z-index:30;
+}
+
+/* Screen flash */
+#flash{position:absolute;inset:0;pointer-events:none;z-index:35;opacity:0;}
+
+/* Miss flash */
+#missFlash{position:absolute;inset:0;pointer-events:none;z-index:34;opacity:0;background:rgba(255,0,0,.3);}
+
+/* ── Piano keyboard — INVERTED (black on top, white hang down) ── */
+#pianoWrapper{
+  position:relative;flex-shrink:0;z-index:20;
+  background:linear-gradient(180deg,#0c0c20 0%,#05050e 100%);
+  border-top:3px solid rgba(0,245,255,.25);
+  box-shadow:0 -15px 60px rgba(0,0,0,.9),0 -3px 30px rgba(0,245,255,.06);
+}
+#pianoScroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;height:100%}
+#pianoScroll::-webkit-scrollbar{display:none}
+#keyboard{position:relative;height:100%;display:inline-block}
+
+/* WHITE keys — anchored top, hang down */
+.wk{
+  position:absolute;top:0;cursor:pointer;z-index:1;
+  border-radius:0 0 8px 8px;
+  background:linear-gradient(180deg,#9ea4c0 0%,#e4e8f5 20%,#cdd2ea 100%);
+  border-left:1px solid rgba(0,0,0,.28);
+  border-bottom:6px solid rgba(0,0,0,.4);
+  box-shadow:inset 0 2px 5px rgba(255,255,255,.55),0 5px 10px rgba(0,0,0,.4);
+  transition:background .04s,box-shadow .04s;
+}
+.wk.pressed{
+  background:linear-gradient(180deg,rgba(0,245,255,.65) 0%,rgba(0,245,255,.25) 100%)!important;
+  box-shadow:0 0 30px rgba(0,245,255,.9),0 0 8px rgba(0,245,255,.5),inset 0 2px 4px rgba(0,0,0,.2)!important;
+  border-bottom-color:rgba(0,245,255,.4)!important;
+}
+.wk.glow{
+  background:linear-gradient(180deg,rgba(80,160,255,.55) 0%,rgba(80,160,255,.2) 100%)!important;
+  box-shadow:0 0 20px rgba(80,160,255,.8),0 0 5px rgba(80,160,255,.4)!important;
+}
+.wk.waiting{
+  background:linear-gradient(180deg,rgba(255,204,0,.75) 0%,rgba(255,204,0,.3) 100%)!important;
+  box-shadow:0 0 30px rgba(255,204,0,1),0 0 8px rgba(255,204,0,.5)!important;
+  animation:kPulse .45s ease-in-out infinite alternate;
+}
+.wk.correct{
+  background:linear-gradient(180deg,rgba(57,255,20,.75) 0%,rgba(57,255,20,.3) 100%)!important;
+  box-shadow:0 0 35px rgba(57,255,20,1)!important;
+}
+
+/* BLACK keys — anchored top, shorter */
+.bk{
+  position:absolute;top:0;cursor:pointer;z-index:2;
+  border-radius:0 0 5px 5px;
+  background:linear-gradient(180deg,#0d0d22 0%,#1a1a30 60%,#252540 100%);
+  border:1px solid rgba(0,0,0,.9);border-top:none;
+  box-shadow:2px 4px 10px rgba(0,0,0,.95),inset 0 1px 2px rgba(255,255,255,.06);
+  transition:background .04s,box-shadow .04s;
+}
+.bk.pressed{
+  background:linear-gradient(180deg,rgba(0,245,255,.65) 0%,rgba(0,245,255,.3) 100%)!important;
+  box-shadow:0 0 20px rgba(0,245,255,.9)!important;
+}
+.bk.glow{
+  background:linear-gradient(180deg,rgba(80,160,255,.6) 0%,rgba(80,160,255,.3) 100%)!important;
+  box-shadow:0 0 16px rgba(80,160,255,.9)!important;
+}
+.bk.waiting{
+  background:linear-gradient(180deg,rgba(255,204,0,.8) 0%,rgba(255,204,0,.4) 100%)!important;
+  box-shadow:0 0 22px rgba(255,204,0,1)!important;
+  animation:kPulse .45s ease-in-out infinite alternate;
+}
+.bk.correct{
+  background:linear-gradient(180deg,rgba(57,255,20,.8) 0%,rgba(57,255,20,.4) 100%)!important;
+  box-shadow:0 0 24px rgba(57,255,20,1)!important;
+}
+@keyframes kPulse{from{filter:brightness(.7)}to{filter:brightness(1.3)}}
+
+.key-lbl{
+  position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
+  font-size:7px;color:rgba(0,0,0,.28);pointer-events:none;font-family:'Rajdhani',sans-serif;
+}
+.bk .key-lbl{color:rgba(255,255,255,.2);bottom:3px}
+
+/* ── PAUSE OVERLAY ── */
+#pauseOv{
+  display:none;position:absolute;inset:0;background:rgba(3,3,15,.94);z-index:200;
+  align-items:center;justify-content:center;flex-direction:column;
+  backdrop-filter:blur(18px);
+}
+#pauseOv.show{display:flex}
+.pause-t{
+  font-family:'Orbitron',monospace;font-size:38px;font-weight:900;letter-spacing:8px;
+  color:var(--cyan);text-shadow:0 0 50px var(--cyan),0 0 100px rgba(0,245,255,.3);margin-bottom:6px;
+}
+.pause-sub{font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.22);margin-bottom:34px;text-transform:uppercase;}
+.pause-menu{display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;}
+.pmenu-btn{
+  display:flex;align-items:center;gap:14px;border:none;cursor:pointer;border-radius:10px;
+  padding:14px 20px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;transition:all .18s;width:100%;
+}
+.pmenu-btn .pm-icon{font-size:18px;flex-shrink:0}
+.pmenu-btn .pm-txt{flex:1;text-align:left;display:flex;flex-direction:column;gap:2px;}
+.pmenu-btn .pm-hint{font-size:9px;opacity:.38;font-family:'Rajdhani',sans-serif;letter-spacing:1px;font-weight:400;text-transform:none;}
+#pm-resume{background:linear-gradient(135deg,var(--cyan),#007799);color:#000;box-shadow:0 0 26px rgba(0,245,255,.4);}
+#pm-resume:hover{box-shadow:0 0 46px rgba(0,245,255,.7);transform:translateY(-2px)}
+#pm-restart{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;}
+#pm-restart:hover{background:rgba(255,170,0,.12);border-color:rgba(255,170,0,.35);color:var(--gold);}
+#pm-exit{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.42);}
+#pm-exit:hover{background:rgba(255,45,120,.1);border-color:rgba(255,45,120,.3);color:var(--pink);}
+
+/* ── COUNTDOWN ── */
+#countdownOv{
+  display:none;position:absolute;inset:0;z-index:300;
+  align-items:center;justify-content:center;flex-direction:column;gap:10px;
+  background:rgba(3,3,15,.8);backdrop-filter:blur(10px);pointer-events:none;
+}
+#countdownOv.show{display:flex}
+#cdNum{
+  font-family:'Orbitron',monospace;font-size:clamp(90px,22vw,170px);font-weight:900;
+  color:var(--cyan);text-shadow:0 0 60px var(--cyan),0 0 140px rgba(0,245,255,.35);
+}
+#cdNum.go{color:var(--green);text-shadow:0 0 60px var(--green),0 0 140px rgba(57,255,20,.35);}
+#cdNum.anim{animation:cdPop .85s ease-out forwards;}
+#cdSub{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:7px;color:rgba(255,255,255,.38);text-transform:uppercase;}
+@keyframes cdPop{
+  0%{transform:scale(2.2);opacity:0}25%{opacity:1}65%{transform:scale(.98);opacity:1}100%{transform:scale(.7);opacity:0}
+}
+
+/* ── GAME OVER ── */
+#gameOverOv{
+  display:none;position:absolute;inset:0;z-index:250;
+  align-items:center;justify-content:center;flex-direction:column;gap:18px;
+  background:radial-gradient(ellipse at 50% 40%,rgba(140,0,0,.4) 0%,rgba(3,3,15,.96) 70%);
+  backdrop-filter:blur(18px);
+}
+#gameOverOv.show{display:flex}
+.go-skull{font-size:70px;animation:goShake .25s ease-in-out 4}
+@keyframes goShake{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.go-title{
+  font-family:'Orbitron',monospace;font-size:clamp(30px,8vw,54px);font-weight:900;
+  letter-spacing:4px;color:var(--pink);
+  text-shadow:0 0 40px var(--pink),0 0 80px rgba(255,45,120,.5);
+}
+.go-sub{font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.35);text-transform:uppercase;}
+.go-stats{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;}
+.go-stat-v{font-family:'Orbitron',monospace;font-size:22px;color:var(--gold);text-align:center}
+.go-stat-l{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.28);text-align:center}
+.go-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.btn-danger{
+  background:linear-gradient(135deg,#cc0044,#880020);color:#fff;
+  font-size:12px;padding:13px 28px;border-radius:8px;
+  box-shadow:0 0 24px rgba(255,45,120,.45);
+}
+.btn-danger:hover{box-shadow:0 0 44px rgba(255,45,120,.75);transform:translateY(-2px)}
+
+/* ═══════════════ RESULT SCREEN ═══════════════ */
+#resultScreen{
+  align-items:center;justify-content:center;gap:16px;padding:24px 18px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%,rgba(0,80,255,.14) 0%,transparent 60%),
+    var(--bg);
+}
+.res-emoji{font-size:52px}
+.res-grade{
+  font-family:'Orbitron',monospace;font-size:74px;font-weight:900;
+  background:linear-gradient(135deg,var(--gold),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 28px rgba(255,204,0,.5));
+}
+.res-lbl{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.26);text-transform:uppercase}
+.stats-g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:460px}
+.stat-c{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;padding:12px;text-align:center;
+}
+.stat-v{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--cyan)}
+.stat-l{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.28);margin-top:3px}
+
+/* particles */
+.prt{position:absolute;pointer-events:none;border-radius:50%;animation:pBurst .7s ease-out forwards}
+@keyframes pBurst{to{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
+
+/* rotate hint */
+#rotHint{display:none;position:fixed;inset:0;background:#05050e;z-index:999;
+  align-items:center;justify-content:center;flex-direction:column;gap:20px;text-align:center;padding:40px;}
+.rot-ico{font-size:60px;animation:rotA 1.5s ease-in-out infinite}
+@keyframes rotA{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<div id="rotHint">
+  <div class="rot-ico">📱</div>
+  <div style="font-family:Orbitron,monospace;font-size:18px;color:#00f5ff;letter-spacing:3px">GIRA A HORIZONTAL</div>
+  <div style="color:rgba(255,255,255,.3);font-size:13px">Mejor experiencia en landscape</div>
+  <button class="btn btn-out" onclick="document.getElementById('rotHint').style.display='none'">Continuar</button>
+</div>
+
+<!-- ═══════ HOME ═══════ -->
+<div id="homeScreen" class="screen active">
+  <div class="logo-wrap">
+    <div class="logo-main">PIANO HERO</div>
+    <div class="logo-piano">Rock the keys</div>
+  </div>
+  <!-- decorative keyboard -->
+  <div class="home-keys" id="homeKeys"></div>
+
+  <div class="upload-zone" id="uploadZone">
+    <div class="ico">🎵</div>
+    <p><strong>Arrastra un archivo MIDI aquí</strong></p>
+    <p>o toca para seleccionar · .mid / .midi</p>
+    <input type="file" id="fileInput" accept=".mid,.midi">
+  </div>
+  <div id="songInfo"></div>
+
+  <div style="text-align:center;position:relative;z-index:1">
+    <div class="ctrl-lbl" style="margin-bottom:10px">MODO DE JUEGO</div>
+    <div class="mode-row">
+      <button class="mode-btn on" id="mStrict" onclick="setMode('strict')">🎮 ESTRICTO</button>
+      <button class="mode-btn"   id="mRelax"  onclick="setMode('relax')">🎵 RELAJADO</button>
+      <button class="mode-btn"   id="mFree"   onclick="setMode('free')">🎹 LIBRE</button>
+    </div>
+    <div class="mode-desc" id="mDesc" style="margin-top:8px">La música espera hasta que toques las notas correctas</div>
+  </div>
+
+  <div class="ctrl-row">
+    <span class="ctrl-lbl">VELOCIDAD</span>
+    <input type="range" id="speedSl" min="40" max="160" value="100">
+    <span class="ctrl-v" id="speedV">1.0×</span>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-glow" id="btnPlay" disabled>▶ JUGAR</button>
+    <button class="btn btn-out" onclick="launchFree()">🎹 MODO LIBRE</button>
+  </div>
+</div>
+
+<!-- ═══════ GAME ═══════ -->
+<div id="gameScreen" class="screen">
+  <div id="hud">
+    <div class="hud-b">
+      <div class="hud-lbl">Score</div>
+      <div class="hud-v" id="scoreV">0</div>
+    </div>
+    <div id="healthWrap">
+      <div id="healthTop">
+        <span id="healthLbl">♥ VIDA</span>
+        <span id="healthPct">100%</span>
+      </div>
+      <div id="healthTrack"><div id="healthFill"></div></div>
+    </div>
+    <div class="hud-b">
+      <div class="hud-lbl">Combo</div>
+      <div class="hud-v" id="comboV">×0</div>
+    </div>
+    <div class="hud-center">
+      <div id="songTitleH">—</div>
+      <div id="progBar"><div id="progFill"></div></div>
+    </div>
+    <button id="btnPause">⏸ PAUSA</button>
+  </div>
+
+  <div id="waitBar"><div id="waitText">⏸ TOCA LAS TECLAS DORADAS</div></div>
+
+  <!-- Stage: background + 3D highway canvas -->
+  <div id="stageWrap">
+    <div id="stageBg"></div>
+    <div id="stageLights"></div>
+    <div id="highway">
+      <canvas id="laneCanvas"></canvas>
+    </div>
+    <div id="feedback"></div>
+    <div id="flash"></div>
+    <div id="missFlash"></div>
+  </div>
+
+  <!-- Inverted piano keyboard -->
+  <div id="pianoWrapper">
+    <div id="pianoScroll"><div id="keyboard"></div></div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pauseOv">
+    <div class="pause-t">PAUSA</div>
+    <div class="pause-sub">Juego detenido</div>
+    <div class="pause-menu">
+      <button class="pmenu-btn" id="pm-resume">
+        <span class="pm-icon">▶</span>
+        <span class="pm-txt"><span class="pm-lbl">Continuar</span><span class="pm-hint">Sigue donde lo dejaste</span></span>
+      </button>
+      <button class="pmenu-btn" id="pm-restart">
+        <span class="pm-icon">🔄</span>
+        <span class="pm-txt"><span class="pm-lbl">Reiniciar</span><span class="pm-hint">Empieza desde el principio</span></span>
+      </button>
+      <button class="pmenu-btn" id="pm-exit">
+        <span class="pm-icon">🏠</span>
+        <span class="pm-txt"><span class="pm-lbl">Salir al menú</span><span class="pm-hint">Perderás el progreso</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Game Over -->
+  <div id="gameOverOv">
+    <div class="go-skull">💀</div>
+    <div class="go-title">GAME OVER</div>
+    <div class="go-sub">Se acabó la vida</div>
+    <div class="go-stats">
+      <div class="go-stat"><div class="go-stat-v" id="goScore">0</div><div class="go-stat-l">PUNTAJE</div></div>
+      <div class="go-stat"><div class="go-stat-v" id="goCombo">0</div><div class="go-stat-l">MAX COMBO</div></div>
+      <div class="go-stat"><div class="go-stat-v" id="goAcc">0%</div><div class="go-stat-l">PRECISIÓN</div></div>
+    </div>
+    <div class="go-btns">
+      <button class="btn btn-danger" id="goRetry">🔄 REINTENTAR</button>
+      <button class="btn btn-out" id="goMenu">🏠 MENÚ</button>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div id="countdownOv">
+    <div id="cdNum">3</div>
+    <div id="cdSub">prepárate…</div>
+  </div>
+</div>
+
+<!-- ═══════ RESULT ═══════ -->
+<div id="resultScreen" class="screen">
+  <div class="res-emoji" id="resE">🏆</div>
+  <div class="res-grade" id="resG">S</div>
+  <div class="res-lbl">RESULTADO FINAL</div>
+  <div class="stats-g">
+    <div class="stat-c"><div class="stat-v" id="rH">0</div><div class="stat-l">PERFECTAS</div></div>
+    <div class="stat-c"><div class="stat-v" id="rM" style="color:#ff2d78">0</div><div class="stat-l">FALLADAS</div></div>
+    <div class="stat-c"><div class="stat-v" id="rC" style="color:#ffcc00">0</div><div class="stat-l">MAX COMBO</div></div>
+    <div class="stat-c"><div class="stat-v" id="rA">0%</div><div class="stat-l">PRECISIÓN</div></div>
+    <div class="stat-c"><div class="stat-v" id="rS">0</div><div class="stat-l">PUNTAJE</div></div>
+    <div class="stat-c"><div class="stat-v" id="rG2" style="color:#ffcc00">—</div><div class="stat-l">GRADO</div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-glow" id="btnReplay">🔄 REPETIR</button>
+    <button class="btn btn-out"  id="btnResHome">🏠 MENÚ</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════
+//  MIDI PARSER
+// ═══════════════════════════════════════════════════
+class MP{
+  constructor(b){this.v=new DataView(b);this.len=b.byteLength;this.p=0}
+  eof(){return this.p>=this.len}
+  ok(n=1){return this.p+n<=this.len}
+  u8(){if(!this.ok())throw new RangeError('EOF');return this.v.getUint8(this.p++)}
+  u16(){if(!this.ok(2))throw new RangeError('EOF');const x=this.v.getUint16(this.p);this.p+=2;return x}
+  u32(){if(!this.ok(4))throw new RangeError('EOF');const x=this.v.getUint32(this.p);this.p+=4;return x}
+  vl(){let v=0,b,g=0;do{if(this.eof()||g++>4)return v;b=this.u8();v=(v<<7)|(b&0x7f)}while(b&0x80);return v>>>0}
+  str(n){let s='';for(let i=0;i<n;i++)s+=this.ok()?String.fromCharCode(this.u8()):'?';return s}
+  skip(n){if(n>0)this.p=Math.min(this.len,this.p+n)}
+  parse(){
+    this.p=0;
+    const hdr=this.str(4);
+    if(hdr!=='MThd')throw new Error('No es MIDI válido');
+    const hl=this.u32(),fmt=this.u16(),nt=this.u16(),div=this.u16();
+    if(hl>6)this.skip(hl-6);
+    const tracks=[];
+    for(let t=0;t<nt&&!this.eof();t++){
+      let tag='';
+      for(let a=0;a<8&&!this.eof();a++){tag=this.str(4);if(tag==='MTrk')break;if(this.ok(4))this.skip(this.u32())}
+      if(tag!=='MTrk'||!this.ok(4))break;
+      const tl=this.u32(),end=Math.min(this.len,this.p+tl);
+      const ev=[];let tick=0,last=0;
+      while(this.p<end-1){
+        let dt=0,b2,g=0;
+        do{if(this.p>=end||g++>4){dt=0;break}b2=this.u8();dt=(dt<<7)|(b2&0x7f)}while(b2&0x80);
+        tick+=dt>>>0;
+        if(this.p>=end)break;
+        let st=this.v.getUint8(this.p);
+        if(st&0x80){last=st;this.p++}else st=last;
+        const ty=st&0xf0;
+        if(ty===0x90||ty===0x80){
+          if(!this.ok(2))break;
+          const note=this.u8()&0x7f,vel=this.u8()&0x7f;
+          ev.push({tick,type:(ty===0x90&&vel>0)?'on':'off',note,vel});
+        }else if(ty===0xa0||ty===0xb0||ty===0xe0){this.skip(2)}
+        else if(ty===0xc0||ty===0xd0){this.skip(1)}
+        else if(st===0xff){
+          if(this.p>=end)break;
+          const mt=this.u8(),ml=this.vl(),me=Math.min(end,this.p+ml);
+          if(mt===0x51&&ml===3&&this.ok(3)){const a=this.u8(),b=this.u8(),c=this.u8();ev.push({tick,type:'tempo',val:(a<<16)|(b<<8)|c})}
+          else if(mt===0x2f){this.p=me;break}
+          else this.p=me;
+        }else if(st===0xf0||st===0xf7){this.skip(this.vl())}
+        else this.skip(1);
+      }
+      this.p=end;tracks.push(ev);
+    }
+    if(!tracks.length)throw new Error('No se encontraron tracks');
+    return{div,tracks};
+  }
+}
+
+function parseMidi(buf){
+  const mp=new MP(buf);
+  const{div,tracks}=mp.parse();
+  if(!div||div<=0)throw new Error('División MIDI inválida');
+  const tmap=[];
+  tracks.forEach(tr=>tr.forEach(e=>{if(e.type==='tempo')tmap.push({tick:e.tick,t:e.val})}));
+  tmap.sort((a,b)=>a.tick-b.tick);
+  function t2ms(tick){
+    let ms=0,lt=0,cur=500000;
+    for(const te of tmap){if(te.tick>tick)break;ms+=(te.tick-lt)*cur/div/1000;lt=te.tick;cur=te.t}
+    return ms+(tick-lt)*cur/div/1000;
+  }
+  const notes=[];
+  tracks.forEach((track,ti)=>{
+    const act={};
+    track.forEach(e=>{
+      if(e.type==='on'){act[e.note]=e.tick}
+      else if(e.type==='off'&&act[e.note]!=null){
+        const s=t2ms(act[e.note]),en=t2ms(e.tick);
+        if(en>s&&s>=0&&isFinite(s)&&isFinite(en))notes.push({note:e.note,startMs:s,endMs:en,dur:en-s,track:ti});
+        delete act[e.note];
+      }
+    });
+    Object.entries(act).forEach(([n,tk])=>{
+      const s=t2ms(+tk);
+      if(s>=0&&isFinite(s))notes.push({note:+n,startMs:s,endMs:s+280,dur:280,track:ti});
+    });
+  });
+  if(!notes.length)throw new Error('El MIDI no contiene notas');
+  notes.sort((a,b)=>a.startMs-b.startMs);
+  return notes;
+}
+
+// ═══════════════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════════════
+let actx=null;
+function getAudio(){
+  if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+  if(actx.state==='suspended')actx.resume();
+  return actx;
+}
+function playNoteAudio(midi,dur=0.9,vel=0.72){
+  const ctx=getAudio();
+  const freq=440*Math.pow(2,(midi-69)/12);
+  const now=ctx.currentTime;
+  const master=ctx.createGain();
+  master.connect(ctx.destination);
+  master.gain.setValueAtTime(0,now);
+  master.gain.linearRampToValueAtTime(vel*0.25,now+0.008);
+  master.gain.setValueAtTime(vel*0.25,now+0.02);
+  master.gain.exponentialRampToValueAtTime(vel*0.07,now+0.14);
+  master.gain.exponentialRampToValueAtTime(0.001,now+Math.max(0.18,dur));
+  [{t:'triangle',d:0,v:1},{t:'sine',d:.5,v:.35},{t:'triangle',d:-.5,v:.28}].forEach(o=>{
+    const osc=ctx.createOscillator();osc.type=o.t;
+    osc.frequency.value=freq*(1+o.d*0.0002);
+    const og=ctx.createGain();og.gain.value=o.v;
+    osc.connect(og);og.connect(master);
+    osc.start(now);osc.stop(now+Math.max(0.18,dur)+0.05);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  PIANO KEYBOARD  (inverted: black keys on top)
+// ═══════════════════════════════════════════════════
+const START=21,TOTAL=88;
+function isBlack(m){return[1,3,6,8,10].includes(m%12)}
+let keyEls={},wMap={},WW=36,PH=0,WH=0,BW=0,BH=0;
+
+function buildPiano(){
+  const kb=document.getElementById('keyboard');
+  kb.innerHTML='';keyEls={};wMap={};
+  const landscape=window.innerWidth>window.innerHeight;
+  PH=landscape?145:120;
+  document.getElementById('pianoWrapper').style.height=PH+'px';
+  WW=Math.max(24,Math.min(42,window.innerWidth/52));
+  WH=PH-4;
+  BW=WW*0.60;BH=WH*0.50;
+  kb.style.height=PH+'px';
+  let wx=0;
+  for(let m=START;m<START+TOTAL;m++){if(!isBlack(m)){wMap[m]=wx*WW;wx++;}}
+  kb.style.width=(wx*WW)+'px';
+  // whites
+  for(let m=START;m<START+TOTAL;m++){
+    if(isBlack(m))continue;
+    const el=document.createElement('div');
+    el.className='wk';
+    el.style.cssText=`width:${WW-1}px;height:${WH}px;left:${wMap[m]}px;top:0`;
+    el.dataset.midi=m;
+    if(m%12===0){const l=document.createElement('div');l.className='key-lbl';l.textContent='C'+(Math.floor(m/12)-1);el.appendChild(l)}
+    bindKey(el,m);kb.appendChild(el);keyEls[m]=el;
+  }
+  // blacks
+  for(let m=START;m<START+TOTAL;m++){
+    if(!isBlack(m))continue;
+    let pv=-1;for(let x=m-1;x>=START;x--){if(!isBlack(x)){pv=x;break}}
+    let nx=-1;for(let x=m+1;x<START+TOTAL;x++){if(!isBlack(x)){nx=x;break}}
+    if(pv<0||nx<0)continue;
+    const lx=wMap[pv]+WW-BW/2;
+    const el=document.createElement('div');el.className='bk';
+    el.style.cssText=`width:${BW}px;height:${BH}px;left:${lx}px;top:0`;
+    el.dataset.midi=m;
+    bindKey(el,m);kb.appendChild(el);keyEls[m]=el;
+  }
+  setTimeout(()=>{document.getElementById('pianoScroll').scrollLeft=(wMap[60]||0)-window.innerWidth/2;},60);
+}
+
+function bindKey(el,midi){
+  let held=false;
+  const dn=e=>{e.preventDefault();if(held)return;held=true;getAudio();playNoteAudio(midi,.85,.72);el.classList.add('pressed');handleInput(midi)};
+  const up=e=>{e.preventDefault();held=false;el.classList.remove('pressed')};
+  el.addEventListener('touchstart',dn,{passive:false});
+  el.addEventListener('touchend',up,{passive:false});
+  el.addEventListener('touchcancel',up,{passive:false});
+  el.addEventListener('mousedown',dn);
+  el.addEventListener('mouseup',up);
+  el.addEventListener('mouseleave',up);
+}
+
+function setKS(midi,state){
+  const el=keyEls[midi];if(!el)return;
+  el.classList.remove('waiting','correct','glow','pressed');
+  if(state)el.classList.add(state);
+}
+function getKeyX(midi){
+  if(!isBlack(midi))return(wMap[midi]??0)+WW/2;
+  const el=keyEls[midi];return el?parseFloat(el.style.left)+parseFloat(el.style.width)/2:0;
+}
+
+// ═══════════════════════════════════════════════════
+//  GUITAR HERO STAGE RENDERER
+// ═══════════════════════════════════════════════════
+/*
+  The "highway" is drawn on a canvas.
+  - Notes fall from top → hit zone at bottom
+  - Each note is mapped to an X position corresponding to its piano key
+  - We draw a perspective-grid lane beneath the notes
+  - Note blocks are colored by track with rounded-rect Guitar Hero style
+  - Hit zone = glowing horizontal bar near bottom of canvas
+*/
+let laneCanvas, lctx;
+let stageW=0, stageH=0;
+
+// Color palettes per track (Guitar Hero feel)
+const NOTE_COLORS=[
+  // track 0 — blue
+  {body:'#1a6aff',top:'#5596ff',glow:'#4488ff',shadow:'rgba(30,100,255,.7)'},
+  // track 1 — green
+  {body:'#1fc71f',top:'#50ff50',glow:'#39ff14',shadow:'rgba(30,200,30,.7)'},
+  // track 2 — red/pink
+  {body:'#cc1a50',top:'#ff4488',glow:'#ff2d78',shadow:'rgba(255,30,100,.7)'},
+  // track 3 — yellow/gold
+  {body:'#cc8800',top:'#ffcc00',glow:'#ffaa00',shadow:'rgba(255,180,0,.7)'},
+  // track 4 — purple
+  {body:'#6a1aaa',top:'#aa50ff',glow:'#9040ff',shadow:'rgba(140,50,255,.7)'},
+  // track 5 — orange
+  {body:'#cc4400',top:'#ff8833',glow:'#ff6600',shadow:'rgba(255,100,0,.7)'},
+];
+
+function initCanvas(){
+  laneCanvas=document.getElementById('laneCanvas');
+  lctx=laneCanvas.getContext('2d');
+  resizeCvs();
+}
+function resizeCvs(){
+  const sw=document.getElementById('stageWrap');
+  stageW=sw.clientWidth||window.innerWidth;
+  stageH=sw.clientHeight||300;
+  laneCanvas.width=stageW;laneCanvas.height=stageH;
+}
+
+// Guitar Hero perspective: map note x-position on piano to lane x-position on screen
+// Piano scroll offset must be accounted for
+function laneX(midi){
+  const scroll=document.getElementById('pianoScroll').scrollLeft;
+  const kx=isBlack(midi)?
+    (keyEls[midi]?parseFloat(keyEls[midi].style.left)+BW/2:0):
+    ((wMap[midi]??0)+WW/2);
+  return kx-scroll;
+}
+
+// Width of note block on screen (roughly proportional to key width)
+function laneW(midi){
+  return isBlack(midi)?BW*1.2:WW*1.1;
+}
+
+// HIT_Y: where notes land (bottom of fall area, just above piano)
+function getHitY(){return stageH*0.88;}
+
+// Note falls from y= -noteHeight to y= hitY
+// Time until note hits: (n.startMs - elapsed) ms
+// pixels per ms:
+const BASE_PX_PER_MS=0.32;
+
+function drawStage(){
+  if(!lctx)return;
+  lctx.clearRect(0,0,stageW,stageH);
+
+  const hitY=getHitY();
+  const scroll=document.getElementById('pianoScroll').scrollLeft;
+
+  // ── Draw perspective lane grid ──
+  drawLaneGrid(hitY);
+
+  // ── Draw falling note blocks ──
+  const PX_MS=BASE_PX_PER_MS*G.speed*60;
+  for(const fn of falling){
+    if(fn.removed||fn.hit)continue;
+    const col=NOTE_COLORS[fn.track%NOTE_COLORS.length];
+    const nx=laneX(fn.midi);
+    const nw=laneW(fn.midi);
+    const nh=Math.max(12,(fn.endMs-fn.startMs)*PX_MS);
+    // top of block: hitY - (startMs-elapsed)*PX_MS - nh
+    const ny=hitY-(fn.startMs-G.elapsed)*PX_MS-nh;
+    const nb=ny+nh; // bottom
+
+    if(nb<-20||ny>stageH+20)continue;
+
+    // Clamp to canvas
+    const drawY=Math.max(-10,ny);
+    const drawH=Math.min(stageH+10,nb)-drawY;
+    if(drawH<2)continue;
+
+    const x=nx-nw/2;
+
+    // Glow / shadow
+    lctx.save();
+    lctx.shadowColor=col.glow;
+    lctx.shadowBlur=20;
+
+    // Body gradient
+    const grd=lctx.createLinearGradient(x,drawY,x,drawY+drawH);
+    grd.addColorStop(0,col.top);
+    grd.addColorStop(0.4,col.body);
+    grd.addColorStop(1,shadeColor(col.body,-50));
+    lctx.fillStyle=grd;
+    roundRect(lctx,x,drawY,nw,drawH,6);
+    lctx.fill();
+
+    // Top shine strip
+    lctx.shadowBlur=0;
+    lctx.fillStyle='rgba(255,255,255,.35)';
+    roundRect(lctx,x+2,drawY+2,nw-4,Math.min(9,drawH*.2),4);
+    lctx.fill();
+
+    // Side edge highlight (Guitar Hero detail)
+    const egrad=lctx.createLinearGradient(x,0,x+nw,0);
+    egrad.addColorStop(0,'rgba(255,255,255,.18)');
+    egrad.addColorStop(0.5,'rgba(255,255,255,0)');
+    egrad.addColorStop(1,'rgba(0,0,0,.18)');
+    lctx.fillStyle=egrad;
+    roundRect(lctx,x,drawY,nw,drawH,6);
+    lctx.fill();
+
+    // Bottom cap (glowing "button" end)
+    if(nb>=hitY-80&&nb<=stageH+20){
+      const alpha=Math.max(0,1-(hitY-nb)/80);
+      lctx.fillStyle=`rgba(255,255,255,${alpha*.25})`;
+      roundRect(lctx,x+1,drawY+drawH-6,nw-2,6,4);
+      lctx.fill();
+    }
+
+    lctx.restore();
+  }
+
+  // ── Draw hit zone (Guitar Hero style hit bar) ──
+  drawHitZone(hitY);
+}
+
+function drawLaneGrid(hitY){
+  const cw=stageW,ch=stageH;
+  // Vertical lane separator lines following perspective
+  // We use the piano keys visible on screen to draw lane lines
+  const scroll=document.getElementById('pianoScroll').scrollLeft;
+  const VP_X=cw/2; // vanishing point x
+  const VP_Y=-stageH*0.6; // vanishing point (above screen)
+  const FLOOR_Y=hitY;
+
+  // draw subtle grid lines fanning from vanishing point
+  lctx.save();
+  lctx.strokeStyle='rgba(80,120,255,.08)';
+  lctx.lineWidth=1;
+  const cols=Math.ceil(cw/50)+2;
+  for(let i=-2;i<=cols;i++){
+    const bx=i*(cw/cols);
+    lctx.beginPath();
+    lctx.moveTo(VP_X+(bx-VP_X)*(-VP_Y/(FLOOR_Y-VP_Y)),VP_Y);
+    lctx.lineTo(bx,FLOOR_Y);
+    lctx.stroke();
+  }
+
+  // horizontal speed lines (rushing toward player)
+  const t=performance.now()*0.001;
+  lctx.strokeStyle='rgba(60,100,255,.06)';
+  const lines=8;
+  for(let i=0;i<lines;i++){
+    const p=((i/lines+t*0.18)%1);
+    const ly=FLOOR_Y*p; // 0 at top vanish, FLOOR_Y at bottom
+    const spreadFactor=p;
+    const x1=VP_X-(cw*spreadFactor*0.55);
+    const x2=VP_X+(cw*spreadFactor*0.55);
+    lctx.lineWidth=p*2;
+    lctx.beginPath();lctx.moveTo(x1,ly);lctx.lineTo(x2,ly);lctx.stroke();
+  }
+
+  // Dark floor gradient behind hit zone
+  const flr=lctx.createLinearGradient(0,hitY-40,0,ch);
+  flr.addColorStop(0,'rgba(0,0,0,0)');
+  flr.addColorStop(1,'rgba(0,0,0,.65)');
+  lctx.fillStyle=flr;
+  lctx.fillRect(0,hitY-40,cw,ch-(hitY-40));
+
+  lctx.restore();
+}
+
+function drawHitZone(hitY){
+  const cw=stageW;
+  lctx.save();
+
+  // Main hit line (bright)
+  const grad=lctx.createLinearGradient(0,0,cw,0);
+  grad.addColorStop(0,'rgba(0,245,255,0)');
+  grad.addColorStop(0.1,'rgba(0,245,255,.9)');
+  grad.addColorStop(0.5,'rgba(120,180,255,1)');
+  grad.addColorStop(0.9,'rgba(0,245,255,.9)');
+  grad.addColorStop(1,'rgba(0,245,255,0)');
+  lctx.strokeStyle=grad;
+  lctx.lineWidth=3;
+  lctx.shadowColor='#00f5ff';lctx.shadowBlur=20;
+  lctx.beginPath();lctx.moveTo(0,hitY);lctx.lineTo(cw,hitY);lctx.stroke();
+
+  // Glow below hit line
+  const glw=lctx.createLinearGradient(0,hitY,0,hitY+50);
+  glw.addColorStop(0,'rgba(0,200,255,.15)');glw.addColorStop(1,'rgba(0,0,0,0)');
+  lctx.fillStyle=glw;lctx.fillRect(0,hitY,cw,50);
+  lctx.shadowBlur=0;
+
+  // Draw button targets: one per visible piano key
+  drawHitButtons(hitY);
+
+  lctx.restore();
+}
+
+// Draw Guitar Hero-style "buttons" at the hit zone for each key
+function drawHitButtons(hitY){
+  const scroll=document.getElementById('pianoScroll').scrollLeft;
+  const cw=stageW;
+  const R=Math.min(WW*0.42,14);
+
+  // Find which midi notes have a falling note nearby (within 200ms)
+  const hotKeys=new Set();
+  for(const fn of falling){
+    if(fn.removed||fn.hit)continue;
+    if(Math.abs(fn.startMs-G.elapsed)<250)hotKeys.add(fn.midi);
+  }
+
+  // Draw a button for each white key in view, black keys on top
+  const drawKey=(midi,bk)=>{
+    const kx=laneX(midi);
+    if(kx<-30||kx>cw+30)return;
+    const col=NOTE_COLORS[(midi%5+5)%5]; // color by pitch class
+    const isHot=hotKeys.has(midi);
+    const isPr=keyEls[midi]&&keyEls[midi].classList.contains('pressed');
+
+    lctx.save();
+    if(isHot||isPr){lctx.shadowColor=isPr?'#ffffff':col.glow;lctx.shadowBlur=isPr?30:18;}
+
+    // Outer ring
+    lctx.beginPath();lctx.arc(kx,hitY,R,0,Math.PI*2);
+    lctx.strokeStyle=isHot?col.top:isPr?'#fff':'rgba(255,255,255,.25)';
+    lctx.lineWidth=isHot?2.5:1.5;
+    lctx.stroke();
+
+    // Inner fill
+    if(isHot||isPr){
+      const rg=lctx.createRadialGradient(kx,hitY,0,kx,hitY,R);
+      rg.addColorStop(0,isPr?'rgba(255,255,255,.8)':col.top+'cc');
+      rg.addColorStop(1,isPr?'rgba(255,255,255,.2)':col.body+'66');
+      lctx.fillStyle=rg;
+    }else{
+      lctx.fillStyle='rgba(255,255,255,.04)';
+    }
+    lctx.beginPath();lctx.arc(kx,hitY,R*.85,0,Math.PI*2);lctx.fill();
+
+    lctx.restore();
+  };
+
+  // whites first, then blacks (so blacks appear on top)
+  for(let m=START;m<START+TOTAL;m++){if(!isBlack(m))drawKey(m,false)}
+  for(let m=START;m<START+TOTAL;m++){if(isBlack(m))drawKey(m,true)}
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return}
+  const mr=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+mr,y);ctx.lineTo(x+w-mr,y);ctx.arcTo(x+w,y,x+w,y+mr,mr);
+  ctx.lineTo(x+w,y+h-mr);ctx.arcTo(x+w,y+h,x+w-mr,y+h,mr);
+  ctx.lineTo(x+mr,y+h);ctx.arcTo(x,y+h,x,y+h-mr,mr);
+  ctx.lineTo(x,y+mr);ctx.arcTo(x,y,x+mr,y,mr);
+  ctx.closePath();
+}
+
+function shadeColor(hex,pct){
+  const n=parseInt(hex.slice(1),16);
+  const r=Math.max(0,Math.min(255,((n>>16)&0xff)+pct));
+  const g=Math.max(0,Math.min(255,((n>>8)&0xff)+pct));
+  const b=Math.max(0,Math.min(255,(n&0xff)+pct));
+  return`#${((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1)}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  HEALTH BAR
+// ═══════════════════════════════════════════════════
+const MAX_HP=100;let HP=MAX_HP;
+function setHP(v){
+  HP=Math.max(0,Math.min(MAX_HP,v));
+  const pct=HP/MAX_HP;
+  document.getElementById('healthFill').style.width=(pct*100)+'%';
+  document.getElementById('healthPct').textContent=Math.round(HP)+'%';
+  const bar=document.getElementById('healthTrack'),pctEl=document.getElementById('healthPct');
+  bar.classList.remove('danger','warn');
+  if(pct<=0.25){bar.classList.add('danger');pctEl.style.color='#ff2d78'}
+  else if(pct<=0.55){bar.classList.add('warn');pctEl.style.color='#ffcc00'}
+  else pctEl.style.color='#39ff14';
+  if(HP<=0)triggerGameOver();
+}
+function dmgHP(a){setHP(HP-a);screenFlash('rgba(255,0,0,0.22)',100);}
+function healHP(a){setHP(HP+a);}
+function screenFlash(col,ms){
+  const fl=document.getElementById('flash');
+  fl.style.background=col;fl.style.opacity='1';fl.style.transition=`opacity ${ms*2}ms`;
+  setTimeout(()=>fl.style.opacity='0',ms);
+}
+
+// ═══════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════
+const G={
+  mode:'strict',speed:1.0,
+  playing:false,paused:false,gameOver:false,
+  notes:[],elapsed:0,startTime:0,totalDur:0,songName:'',
+  score:0,combo:0,maxCombo:0,hits:0,misses:0,spawnIdx:0,waiting:false,
+};
+let chords=[],chordIdx=0,currentChord=null;
+let animId=0;
+let falling=[];
+
+function makeChords(notes){
+  if(!notes.length)return[];
+  const groups=[];let i=0;
+  while(i<notes.length){
+    const base=notes[i].startMs,g={ms:base,notes:[]};
+    while(i<notes.length&&notes[i].startMs<=base+65){
+      if(!g.notes.includes(notes[i].note))g.notes.push(notes[i].note);i++;
+    }
+    groups.push(g);
+  }
+  return groups;
+}
+
+// ═══════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════
+let lastRaf=0;
+function loop(now){
+  if(!G.playing||G.gameOver)return;
+  if(G.paused){animId=requestAnimationFrame(loop);return}
+
+  if(!G.waiting){
+    G.elapsed=(now-G.startTime)*G.speed;
+  }else{
+    G.startTime=now-G.elapsed/G.speed;
+  }
+
+  // STRICT: trigger wait for next chord
+  if(G.mode==='strict'&&chords.length){
+    if(!G.waiting&&chordIdx<chords.length){
+      const cg=chords[chordIdx];
+      if(cg.ms<=G.elapsed+140){
+        G.waiting=true;
+        currentChord={...cg,done:new Set()};
+        currentChord.notes.forEach(m=>setKS(m,'waiting'));
+        scrollToChord(currentChord.notes);
+        document.getElementById('waitBar').style.display='block';
+      }
+    }
+  }
+
+  // Spawn notes
+  const AHEAD=3600/G.speed;
+  while(G.spawnIdx<G.notes.length){
+    const n=G.notes[G.spawnIdx];
+    if(n.startMs>G.elapsed+AHEAD)break;
+    falling.push({midi:n.note,track:n.track,startMs:n.startMs,endMs:n.endMs,hit:false,missed:false,removed:false});
+    G.spawnIdx++;
+  }
+
+  // Update miss detection (relax mode)
+  const PX_MS=BASE_PX_PER_MS*G.speed*60;
+  const hitY=getHitY();
+  for(const fn of falling){
+    if(fn.removed)continue;
+    const ph=Math.max(12,(fn.endMs-fn.startMs)*PX_MS);
+    const ny=hitY-(fn.startMs-G.elapsed)*PX_MS-ph;
+    if(!fn.hit&&!fn.missed&&G.mode==='relax'&&ny>stageH+60){
+      fn.missed=true;fn.removed=true;
+      G.misses++;G.combo=0;dmgHP(8);flashFB('✗ FALLADA',false,0);updHUD();
+    }
+    if(fn.hit&&ny>stageH+100)fn.removed=true;
+  }
+
+  // Illuminate keys in relax mode
+  if(G.mode==='relax'){
+    const lit=new Set();
+    for(const fn of falling){
+      if(fn.hit||fn.missed||fn.removed)continue;
+      const dt=fn.startMs-G.elapsed;
+      if(dt>0&&dt<350)lit.add(fn.midi);
+    }
+    for(const[m,el]of Object.entries(keyEls)){
+      const nm=+m;
+      if(lit.has(nm)){if(!el.classList.contains('pressed')&&!el.classList.contains('correct'))el.classList.add('glow')}
+      else el.classList.remove('glow');
+    }
+  }
+
+  drawStage();
+
+  document.getElementById('progFill').style.width=Math.min(100,G.elapsed/G.totalDur*100)+'%';
+
+  // slow HP drain
+  if(G.mode!=='free'&&!G.waiting)setHP(HP-0.005*G.speed);
+
+  // End check
+  if(G.elapsed>G.totalDur+3200&&G.spawnIdx>=G.notes.length&&falling.filter(f=>!f.removed).length===0){
+    endGame();return;
+  }
+
+  animId=requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════════════════
+function handleInput(midi){
+  if(!G.playing||G.paused||G.gameOver||G.mode==='free')return;
+  if(G.mode==='strict'){
+    if(!G.waiting||!currentChord)return;
+    if(!currentChord.notes.includes(midi)){flashFB('✗ INCORRECTA',false,0);dmgHP(5);return}
+    currentChord.done.add(midi);setKS(midi,'correct');
+    if(currentChord.notes.every(m=>currentChord.done.has(m))){
+      const n=currentChord.notes.length;
+      G.hits+=n;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+      const pts=(100+G.combo*5)*n;G.score+=pts;
+      healHP(n>1?4:2.5+Math.min(G.combo*0.25,5));
+      flashFB(G.combo>=10?'PERFECT! 🔥 ×'+G.combo:G.combo>=5?'GREAT! ⚡':n>1?'CHORD! 🎵':'GOOD!',true,pts);
+      spawnParts(currentChord.notes);
+      currentChord.notes.forEach(m=>{
+        const fn=falling.find(f=>!f.hit&&f.midi===m&&Math.abs(f.startMs-currentChord.ms)<250);
+        if(fn)fn.hit=true;setKS(m,null);
+      });
+      chordIdx++;currentChord=null;G.waiting=false;
+      document.getElementById('waitBar').style.display='none';updHUD();
+    }
+    return;
+  }
+  // RELAX
+  let best=null,bestD=Infinity;
+  for(const fn of falling){
+    if(fn.hit||fn.missed||fn.midi!==midi)continue;
+    const d=Math.abs(fn.startMs-G.elapsed);
+    if(d<bestD&&d<500){bestD=d;best=fn;}
+  }
+  if(best){
+    best.hit=true;G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+    const pts=bestD<130?100:bestD<280?55:25;
+    G.score+=pts*Math.max(1,Math.floor(G.combo/5));
+    healHP(bestD<130?3:1.5);
+    flashFB(bestD<130?'PERFECT! ✨':bestD<280?'GOOD ⚡':'OK',true,pts);
+    spawnParts([midi]);updHUD();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  GAME OVER
+// ═══════════════════════════════════════════════════
+function triggerGameOver(){
+  if(G.gameOver)return;
+  G.gameOver=true;G.playing=false;cancelAnimationFrame(animId);
+  Object.values(keyEls).forEach(el=>el.classList.remove('waiting','correct','glow'));
+  const tot=G.hits+G.misses,acc=tot?Math.round(G.hits/tot*100):0;
+  document.getElementById('goScore').textContent=G.score.toLocaleString();
+  document.getElementById('goCombo').textContent=G.maxCombo;
+  document.getElementById('goAcc').textContent=acc+'%';
+  document.getElementById('gameOverOv').classList.add('show');
+  screenFlash('rgba(255,0,0,.5)',500);
+}
+
+// ═══════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════
+let fbT;
+function flashFB(txt,ok,pts){
+  const fb=document.getElementById('feedback');
+  fb.textContent=txt+(pts?' +'+pts:'');
+  fb.style.color=ok?'#ffcc00':'#ff2d78';fb.style.opacity='1';
+  clearTimeout(fbT);fbT=setTimeout(()=>fb.style.opacity='0',900);
+}
+function updHUD(){
+  document.getElementById('scoreV').textContent=G.score.toLocaleString();
+  document.getElementById('comboV').textContent='×'+G.combo;
+}
+function scrollToChord(midis){
+  if(!midis.length)return;
+  const avg=midis.reduce((a,b)=>a+b,0)/midis.length;
+  const nr=Math.round(avg);
+  const ax=wMap[nr]??wMap[nr+1]??wMap[nr-1]??0;
+  document.getElementById('pianoScroll').scrollTo({left:Math.max(0,ax-window.innerWidth/2),behavior:'smooth'});
+}
+function spawnParts(midis){
+  const fa=document.getElementById('stageWrap');
+  const scroll=document.getElementById('pianoScroll').scrollLeft;
+  const hitY=getHitY();
+  const cols=['#00f5ff','#ffcc00','#39ff14','#ff2d78','#4488ff','#ff7700','#fff'];
+  midis.forEach(midi=>{
+    const x=laneX(midi);
+    for(let i=0;i<12;i++){
+      const p=document.createElement('div');p.className='prt';
+      const sz=3+Math.random()*8;
+      p.style.cssText=`width:${sz}px;height:${sz}px;left:${x}px;top:${hitY}px;position:absolute;
+        background:${cols[Math.floor(Math.random()*cols.length)]};
+        --tx:${(Math.random()-.5)*110}px;--ty:${-(35+Math.random()*80)}px;z-index:40`;
+      fa.appendChild(p);setTimeout(()=>p.remove(),750);
+    }
+  });
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════
+//  GAME FLOW
+// ═══════════════════════════════════════════════════
+let savedNotes=[],savedName='';
+function startGame(notes,name){
+  cancelAnimationFrame(animId);
+  HP=MAX_HP;setHP(HP);
+  Object.assign(G,{
+    notes,songName:name,score:0,combo:0,maxCombo:0,hits:0,misses:0,
+    elapsed:0,spawnIdx:0,playing:true,paused:false,gameOver:false,waiting:false,
+  });
+  falling=[];currentChord=null;chords=makeChords(notes);chordIdx=0;
+  G.totalDur=notes.length?(notes[notes.length-1].endMs+2000):12000;
+  document.getElementById('songTitleH').textContent=name;
+  document.getElementById('progFill').style.width='0%';
+  document.getElementById('feedback').style.opacity='0';
+  document.getElementById('pauseOv').classList.remove('show');
+  document.getElementById('gameOverOv').classList.remove('show');
+  document.getElementById('waitBar').style.display='none';
+  Object.values(keyEls).forEach(el=>el.classList.remove('waiting','correct','glow'));
+  updHUD();
+  G.startTime=performance.now();
+  animId=requestAnimationFrame(loop);
+}
+function endGame(){
+  G.playing=false;cancelAnimationFrame(animId);
+  const tot=G.hits+G.misses,acc=tot?Math.round(G.hits/tot*100):0;
+  const grade=acc>=95?'S':acc>=85?'A':acc>=70?'B':acc>=50?'C':'D';
+  const emoji={S:'🏆',A:'🌟',B:'🎉',C:'👍',D:'😅'}[grade];
+  document.getElementById('resE').textContent=emoji;
+  document.getElementById('resG').textContent=grade;
+  document.getElementById('rH').textContent=G.hits;
+  document.getElementById('rM').textContent=G.misses;
+  document.getElementById('rC').textContent=G.maxCombo;
+  document.getElementById('rA').textContent=acc+'%';
+  document.getElementById('rS').textContent=G.score.toLocaleString();
+  document.getElementById('rG2').textContent=grade;
+  showScreen('resultScreen');
+}
+
+// ═══════════════════════════════════════════════════
+//  COUNTDOWN
+// ═══════════════════════════════════════════════════
+function countdown(then){
+  const ov=document.getElementById('countdownOv'),num=document.getElementById('cdNum'),sub=document.getElementById('cdSub');
+  ov.classList.add('show');
+  let n=3;
+  function tick(){
+    num.className='';void num.offsetWidth;
+    if(n>0){num.textContent=n;num.className='anim';sub.textContent='prepárate…';n--;setTimeout(tick,900)}
+    else{num.textContent='¡YA!';num.className='go anim';sub.textContent='¡toca!';setTimeout(()=>{ov.classList.remove('show');then();},800)}
+  }
+  tick();
+}
+
+// ═══════════════════════════════════════════════════
+//  MODE & EVENTS
+// ═══════════════════════════════════════════════════
+const mDescs={
+  strict:'La música espera hasta que toques las notas correctas ⏸',
+  relax:'Las notas caen — toca cuando lleguen al botón 🎵',
+  free:'Toca libremente el piano completo 🎹'
+};
+function setMode(m){
+  G.mode=m;
+  ['Strict','Relax','Free'].forEach(x=>document.getElementById('m'+x).classList.remove('on'));
+  document.getElementById('m'+m.charAt(0).toUpperCase()+m.slice(1)).classList.add('on');
+  document.getElementById('mDesc').textContent=mDescs[m];
+}
+
+document.getElementById('uploadZone').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('uploadZone').addEventListener('dragover',e=>{e.preventDefault();e.currentTarget.classList.add('drag')});
+document.getElementById('uploadZone').addEventListener('dragleave',e=>e.currentTarget.classList.remove('drag'));
+document.getElementById('uploadZone').addEventListener('drop',e=>{
+  e.preventDefault();e.currentTarget.classList.remove('drag');
+  if(e.dataTransfer.files[0])loadMidi(e.dataTransfer.files[0]);
+});
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files[0])loadMidi(e.target.files[0])});
+
+function loadMidi(file){
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const notes=parseMidi(ev.target.result);
+      if(!notes.length)throw new Error('No se encontraron notas');
+      savedNotes=notes;savedName=file.name.replace(/\.midi?$/i,'');
+      const dur=Math.round(notes[notes.length-1].endMs/1000);
+      document.getElementById('songInfo').textContent=`✅  ${notes.length} notas · ${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')} · ${savedName}`;
+      document.getElementById('btnPlay').disabled=false;
+    }catch(err){document.getElementById('songInfo').textContent='❌ '+err.message}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+document.getElementById('speedSl').addEventListener('input',e=>{
+  G.speed=e.target.value/100;document.getElementById('speedV').textContent=G.speed.toFixed(1)+'×';
+});
+document.getElementById('btnPlay').addEventListener('click',()=>{
+  getAudio();showScreen('gameScreen');resizeCvs();buildPiano();
+  countdown(()=>startGame(savedNotes,savedName));
+});
+document.getElementById('btnPause').addEventListener('click',()=>{
+  if(!G.playing||G.gameOver)return;
+  G.paused=true;document.getElementById('pauseOv').classList.add('show');
+});
+document.getElementById('pm-resume').addEventListener('click',()=>{
+  G.paused=false;document.getElementById('pauseOv').classList.remove('show');
+  countdown(()=>{G.startTime=performance.now()-G.elapsed/G.speed;animId=requestAnimationFrame(loop);});
+});
+document.getElementById('pm-restart').addEventListener('click',()=>{
+  document.getElementById('pauseOv').classList.remove('show');
+  cancelAnimationFrame(animId);G.playing=false;
+  countdown(()=>startGame(savedNotes,savedName));
+});
+document.getElementById('pm-exit').addEventListener('click',()=>{
+  G.playing=false;G.paused=false;G.gameOver=false;cancelAnimationFrame(animId);
+  document.getElementById('pauseOv').classList.remove('show');
+  document.getElementById('gameOverOv').classList.remove('show');
+  document.getElementById('waitBar').style.display='none';
+  document.getElementById('countdownOv').classList.remove('show');
+  showScreen('homeScreen');
+});
+document.getElementById('goRetry').addEventListener('click',()=>{
+  document.getElementById('gameOverOv').classList.remove('show');
+  countdown(()=>startGame(savedNotes,savedName));
+});
+document.getElementById('goMenu').addEventListener('click',()=>{
+  G.gameOver=false;document.getElementById('gameOverOv').classList.remove('show');showScreen('homeScreen');
+});
+document.getElementById('btnReplay').addEventListener('click',()=>{
+  getAudio();showScreen('gameScreen');resizeCvs();buildPiano();countdown(()=>startGame(savedNotes,savedName));
+});
+document.getElementById('btnResHome').addEventListener('click',()=>showScreen('homeScreen'));
+
+function launchFree(){
+  getAudio();
+  Object.assign(G,{mode:'free',playing:false,paused:false,gameOver:false,notes:[],elapsed:0,
+    spawnIdx:0,score:0,combo:0,hits:0,misses:0,waiting:false});
+  falling=[];chords=[];chordIdx=0;currentChord=null;
+  HP=MAX_HP;setHP(HP);
+  showScreen('gameScreen');resizeCvs();buildPiano();
+  document.getElementById('songTitleH').textContent='🎹 MODO LIBRE';
+  document.getElementById('waitBar').style.display='none';
+  document.getElementById('gameOverOv').classList.remove('show');
+  updHUD();
+  countdown(()=>{G.playing=true;G.startTime=performance.now();animId=requestAnimationFrame(loop);});
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){
+    e.preventDefault();
+    if(G.gameOver)return;
+    if(G.playing&&!G.paused)document.getElementById('btnPause').click();
+    else if(G.paused)document.getElementById('pm-resume').click();
+  }
+  if(e.code==='Escape'){
+    if(G.paused)document.getElementById('pm-exit').click();
+    else if(G.playing&&!G.gameOver)document.getElementById('btnPause').click();
+  }
+  if(e.code==='KeyR'&&G.paused)document.getElementById('pm-restart').click();
+});
+
+// ═══════════════════════════════════════════════════
+//  HOME DECORATIVE KEYS ANIMATION
+// ═══════════════════════════════════════════════════
+function buildHomeKeys(){
+  const wrap=document.getElementById('homeKeys');
+  // One octave decoration
+  const pattern=[0,1,0,1,0,0,1,0,1,0,1,0]; // 0=white,1=black
+  const notes=[false,true,false,true,false,false,true,false,true,false,true,false];
+  notes.forEach((isB,i)=>{
+    const el=document.createElement('div');
+    el.className='hk '+(isB?'b':'w');
+    wrap.appendChild(el);
+  });
+  // Animate random keys
+  const keys=wrap.querySelectorAll('.hk');
+  setInterval(()=>{
+    const k=keys[Math.floor(Math.random()*keys.length)];
+    k.classList.add('lit');setTimeout(()=>k.classList.remove('lit'),300);
+  },350);
+}
+
+function checkOrient(){
+  const h=document.getElementById('rotHint');
+  h.style.display=(window.innerWidth<window.innerHeight&&window.innerWidth<600)?'flex':'none';
+}
+window.addEventListener('resize',()=>{buildPiano();resizeCvs();checkOrient()});
+window.addEventListener('orientationchange',()=>setTimeout(()=>{buildPiano();resizeCvs();checkOrient()},300));
+
+window.addEventListener('load',()=>{
+  buildPiano();initCanvas();checkOrient();buildHomeKeys();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+});
+</script>
+</body>
+</html>
