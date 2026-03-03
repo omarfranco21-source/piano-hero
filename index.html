@@ -3,90 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Piano Hero Game">
-    <title>Piano Hero</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="script.js" defer></script>
+    <title>Piano Hero Enhanced</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f0f0; }
+        canvas { border: 1px solid #000; }
+        /* Add your styles for responsiveness and aesthetics */
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Piano Hero</h1>
-        <nav>
-            <ul>
-                <li><a href="#">Home</a></li>
-                <li><a href="#achievements">Achievements</a></li>
-                <li><a href="#leaderboard">Leaderboard</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        <section id="game">
-            <h2>Play the Game</h2>
-            <div id="difficulty">
-                <label for="difficultySelect">Choose Difficulty:</label>
-                <select id="difficultySelect">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-            </div>
-            <button id="startGame">Start Game</button>
-            <div id="gameBoard">
-                <!-- Game board elements go here -->
-            </div>
-            <audio id="gameSound" src="sounds/game-sound.mp3"></audio>
-        </section>
-        <section id="achievements">
-            <h2>Your Achievements</h2>
-            <ul>
-                <li>First Game Played - Completed!</li>
-                <li>Scored 1000 Points - Completed!</li>
-                <li>All Difficulty Levels Mastered - Locked!</li>
-            </ul>
-        </section>
-        <section id="leaderboard">
-            <h2>Leaderboard</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Player</th>
-                        <th>Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Player1</td>
-                        <td>2000</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Player2</td>
-                        <td>1500</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-    </main>
-    <footer>
-        <p>© 2026 Piano Hero. All rights reserved.</p>
-        <p><a href="#contact">Contact</a></p>
-    </footer>
+    <h1>Piano Hero Enhanced</h1>
+    <div id="leaderboard"></div>
+    <canvas id="gameCanvas"></canvas>
     <script>
-        // JavaScript for Game Logic, Data Persistence, and Analytics
-        const achievements = [];
-        const leaderboard = [];
+        // Game configuration
+        const difficulties = ['easy', 'normal', 'hard', 'expert'];
+        const achievements = ['100+combo', '500+combo', '95%accuracy', 'perfect', 'S-grade', 'speedrun'];
+        let leaderboard = [];
 
-        document.getElementById('startGame').addEventListener('click', function() {
-            const difficulty = document.getElementById('difficultySelect').value;
-            // Start game logic here based on difficulty
-            // Load sound effects
-            const sound = document.getElementById('gameSound');
-            sound.play();
-            // Add game analysis and performance tracking
-        });
+        // LocalStorage leaderboard
+        function updateLeaderboard(score) {
+            const oldScores = JSON.parse(localStorage.getItem('leaderboard')) || [];
+            oldScores.push(score);
+            localStorage.setItem('leaderboard', JSON.stringify(oldScores));
+        }
+
+        // Game functions
+        function startGame(difficulty) {
+            // Add game loop, input handling, and rendering logic here
+        }
+
+        function playSoundEffect() {
+            // Play sound effects here
+        }
+
+        window.onload = function() {
+            // Set up the game, handle responsiveness, and other initializations
+        };
     </script>
 </body>
 </html>
