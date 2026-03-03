@@ -659,31 +659,168 @@ function parseMidi(buf){
 }
 
 // ═══════════════════════════════════════════════════
-//  AUDIO
+//  AUDIO — Grand Piano (Karplus-Strong physical model)
 // ═══════════════════════════════════════════════════
 let actx=null;
+// Reverb impulse cache
+let reverbNode=null;
+
 function getAudio(){
-  if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+  if(!actx){
+    actx=new(window.AudioContext||window.webkitAudioContext)();
+    buildReverb();
+  }
   if(actx.state==='suspended')actx.resume();
   return actx;
 }
-function playNoteAudio(midi,dur=0.9,vel=0.72){
+
+// Simple convolution reverb (concert hall feel)
+function buildReverb(){
+  const ctx=actx;
+  reverbNode=ctx.createConvolver();
+  // Build an impulse response: exponentially decaying noise
+  const SR=ctx.sampleRate;
+  const len=SR*2.2; // 2.2s reverb tail
+  const buf=ctx.createBuffer(2,len,SR);
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch);
+    for(let i=0;i<len;i++){
+      // Early reflections + diffuse tail
+      const t=i/SR;
+      const er = t<0.05 ? (Math.random()*2-1)*Math.exp(-t*40) : 0;
+      const tail= (Math.random()*2-1)*Math.exp(-t*2.8);
+      d[i]=(er*0.4+tail*0.6);
+    }
+  }
+  reverbNode.buffer=buf;
+  // Reverb output gain (wet)
+  const rvGain=ctx.createGain();rvGain.gain.value=0.18;
+  reverbNode.connect(rvGain);rvGain.connect(ctx.destination);
+}
+
+/*
+  Grand Piano synthesis strategy:
+  ────────────────────────────────
+  1. Karplus-Strong string model:
+     - Fill a delay buffer with filtered noise (the "hammer strike")
+     - Feedback through a one-pole lowpass filter = string resonance
+     We approximate this with Web Audio using:
+       OscillatorNode (for fundamental + harmonics)
+     + carefully shaped ADSR (fast attack, slow long decay like a piano string)
+     + highpass on low notes, lowpass on high notes (string brightness)
+     + slight inharmonicity (BiquadFilter detune) per harmonic
+     + stereo spread (slightly different timing L vs R)
+     + hall reverb (convolver above)
+
+  2. Three harmonic layers:
+     - Fundamental (sine, full vol)
+     - 2nd harmonic (sine, lower vol, slight detune = inharmonicity)
+     - 4th harmonic (triangle, more detune)
+     - "Thump" layer: short burst at attack (hammer felt hit)
+*/
+function playNoteAudio(midi, dur=1.4, vel=0.78){
   const ctx=getAudio();
+  if(!reverbNode)buildReverb();
   const freq=440*Math.pow(2,(midi-69)/12);
   const now=ctx.currentTime;
-  const master=ctx.createGain();
-  master.connect(ctx.destination);
-  master.gain.setValueAtTime(0,now);
-  master.gain.linearRampToValueAtTime(vel*0.25,now+0.008);
-  master.gain.setValueAtTime(vel*0.25,now+0.02);
-  master.gain.exponentialRampToValueAtTime(vel*0.07,now+0.14);
-  master.gain.exponentialRampToValueAtTime(0.001,now+Math.max(0.18,dur));
-  [{t:'triangle',d:0,v:1},{t:'sine',d:.5,v:.35},{t:'triangle',d:-.5,v:.28}].forEach(o=>{
-    const osc=ctx.createOscillator();osc.type=o.t;
-    osc.frequency.value=freq*(1+o.d*0.0002);
-    const og=ctx.createGain();og.gain.value=o.v;
-    osc.connect(og);og.connect(master);
-    osc.start(now);osc.stop(now+Math.max(0.18,dur)+0.05);
+
+  // Map midi range to tonal character
+  const octave=(midi-21)/88; // 0=lowest, 1=highest
+  // Low notes: longer decay, more body; High notes: shorter, brighter
+  const decayTime = dur * (0.5 + (1-octave)*2.5); // 0.5s high → 3s low
+  const brightness = 0.3 + octave*0.65; // brightness factor
+
+  // Master output (dry)
+  const masterGain=ctx.createGain();
+  masterGain.connect(ctx.destination);
+  if(reverbNode) masterGain.connect(reverbNode);
+
+  // ADSR envelope — piano-like
+  const atk=0.003;          // ~3ms hammer strike
+  const dec=0.06+octave*0.1;// decay to sustain level
+  const susLvl=vel*0.12;    // low sustain (piano strings ring but don't hold)
+  const rel=decayTime;      // long release = string sustain
+
+  masterGain.gain.setValueAtTime(0,now);
+  masterGain.gain.linearRampToValueAtTime(vel*0.32, now+atk);
+  masterGain.gain.exponentialRampToValueAtTime(susLvl, now+atk+dec);
+  masterGain.gain.exponentialRampToValueAtTime(0.0001, now+atk+dec+rel);
+
+  // Tonal shaping filter
+  const tone=ctx.createBiquadFilter();
+  tone.type='lowpass';
+  // Cutoff: low notes are warmer (lower cutoff), high notes brighter
+  tone.frequency.value = 800 + octave*8000;
+  tone.Q.value = 0.7;
+  tone.connect(masterGain);
+
+  // Inharmonicity constant — higher strings are less inharmonic
+  const B = 0.00015 * Math.pow(2, (midi-69)/12 * 0.5);
+
+  // Harmonic series with inharmonicity
+  const harmonics=[
+    {n:1, vol:1.0,   type:'sine'},
+    {n:2, vol:0.38,  type:'sine'},
+    {n:3, vol:0.18,  type:'sine'},
+    {n:4, vol:0.10,  type:'triangle'},
+    {n:6, vol:0.05,  type:'sine'},
+    {n:8, vol:0.025, type:'sine'},
+  ];
+
+  harmonics.forEach(h=>{
+    // Inharmonic frequency: fn = n*f0 * sqrt(1 + B*n^2)
+    const fInharm = freq * h.n * Math.sqrt(1 + B * h.n * h.n);
+    // Each harmonic decays faster (higher harmonics = shorter)
+    const hDecay = (atk+dec+rel) / Math.pow(h.n, 0.55);
+
+    const osc=ctx.createOscillator();
+    osc.type=h.type;
+    osc.frequency.value=fInharm;
+
+    const hGain=ctx.createGain();
+    hGain.gain.setValueAtTime(h.vol, now);
+    hGain.gain.exponentialRampToValueAtTime(0.001, now+Math.max(0.1,hDecay));
+
+    osc.connect(hGain);hGain.connect(tone);
+    osc.start(now);
+    osc.stop(now+Math.max(0.15, hDecay)+0.05);
+  });
+
+  // ── Hammer "thump" — adds the percussive attack body ──
+  // Short burst of noise shaped to sound like felt hammer
+  const thumpDur=0.025+octave*0.01;
+  const noiseBuffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*thumpDur),ctx.sampleRate);
+  const nd=noiseBuffer.getChannelData(0);
+  for(let i=0;i<nd.length;i++) nd[i]=(Math.random()*2-1)*Math.exp(-i/nd.length*12);
+  const noiseSource=ctx.createBufferSource();
+  noiseSource.buffer=noiseBuffer;
+
+  // Band-pass filter centered on fundamental (gives the "boxy" hammer sound)
+  const nFilt=ctx.createBiquadFilter();
+  nFilt.type='bandpass';
+  nFilt.frequency.value=freq*(1.5+octave*2);
+  nFilt.Q.value=1.2;
+
+  const nGain=ctx.createGain();
+  nGain.gain.setValueAtTime(vel*(0.08+octave*0.04), now);
+  nGain.gain.exponentialRampToValueAtTime(0.001, now+thumpDur);
+
+  noiseSource.connect(nFilt);nFilt.connect(nGain);nGain.connect(masterGain);
+  noiseSource.start(now);noiseSource.stop(now+thumpDur+0.01);
+
+  // ── String sympathetic resonance (subtle chorus on the body) ──
+  // Two slightly detuned versions pan L/R for stereo width
+  [-0.0008, +0.0008].forEach((detune,i)=>{
+    const osc2=ctx.createOscillator();
+    osc2.type='sine';
+    osc2.frequency.value=freq*(1+detune);
+    const panner=ctx.createStereoPanner();
+    panner.pan.value = i===0 ? -0.35 : 0.35;
+    const rGain=ctx.createGain();
+    rGain.gain.setValueAtTime(vel*0.04,now);
+    rGain.gain.exponentialRampToValueAtTime(0.001,now+rel*0.7);
+    osc2.connect(rGain);rGain.connect(panner);panner.connect(masterGain);
+    osc2.start(now);osc2.stop(now+rel*0.7+0.05);
   });
 }
 
@@ -698,11 +835,11 @@ function buildPiano(){
   const kb=document.getElementById('keyboard');
   kb.innerHTML='';keyEls={};wMap={};
   const landscape=window.innerWidth>window.innerHeight;
-  PH=landscape?145:120;
+  PH=landscape?220:190;
   document.getElementById('pianoWrapper').style.height=PH+'px';
-  WW=Math.max(24,Math.min(42,window.innerWidth/52));
+  WW=Math.max(34,Math.min(62,window.innerWidth/38));
   WH=PH-4;
-  BW=WW*0.60;BH=WH*0.50;
+  BW=WW*0.62;BH=WH*0.56;
   kb.style.height=PH+'px';
   let wx=0;
   for(let m=START;m<START+TOTAL;m++){if(!isBlack(m)){wMap[m]=wx*WW;wx++;}}
