@@ -246,7 +246,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </head>
 <body>
 
-<!-- HOME -->
 <div id="homeScreen" class="screen active">
   <div class="logo-main">PIANO HERO</div>
   <div class="logo-sub">Rock the keys</div>
@@ -303,7 +302,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
 </div>
 
-<!-- GAME -->
 <div id="gameScreen" class="screen">
   <div id="hud">
     <div class="hud-b"><div class="hud-lbl">SCORE</div><div class="hud-v" id="scoreV">0</div><div id="multV"></div></div>
@@ -347,7 +345,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <div id="countdownOv"><div id="cdNum">3</div><div id="cdSub">prepárate…</div></div>
 </div>
 
-<!-- RESULT -->
 <div id="resultScreen" class="screen">
   <div class="res-emoji" id="resE">🏆</div>
   <div class="res-grade" id="resG">S</div>
@@ -371,7 +368,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
 </div>
 
-<!-- LEADERBOARD -->
 <div id="leaderScreen" class="screen">
   <div style="padding:14px;width:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:11px;overflow-y:auto">
     <div class="lb-title">🏆 TOP 10</div>
@@ -856,28 +852,37 @@ function drawNotes(){
     const kg=KG[fn.group];
     const visTop=Math.max(r.topY,SPAWNY),visBot=Math.min(r.botY,SH+20);
     if(visBot<=visTop+1)continue;
-    const noteH=visBot-visTop;
+
     ctx2d.save();
-    ctx2d.shadowColor=(r.botY>hy-70&&r.botY<hy+20)?kg.hi2:kg.color;
-    ctx2d.shadowBlur=(r.botY>hy-70&&r.botY<hy+20)?20:8;
-    const gr=ctx2d.createLinearGradient(0,visTop,0,visBot);
-    gr.addColorStop(0,kg.hi2);gr.addColorStop(0.35,kg.color);gr.addColorStop(1,kg.color+'aa');
-    ctx2d.fillStyle=gr;
-    const rx=Math.min(r.w/2-1,7);
+    
+    // 1. Efecto de resplandor intenso para la cabeza de la "estrella"
+    ctx2d.shadowColor = (r.botY>hy-70 && r.botY<hy+20) ? kg.hi2 : kg.color;
+    ctx2d.shadowBlur = (r.botY>hy-70 && r.botY<hy+20) ? 25 : 12;
+
+    // 2. Gradiente de la estela (se desvanece hacia arriba)
+    const tailGrad = ctx2d.createLinearGradient(0, visBot, 0, visTop);
+    tailGrad.addColorStop(0, kg.color); // Color intenso en la cabeza
+    tailGrad.addColorStop(1, 'rgba(0,0,0,0)'); // Transparente en el inicio de la estela
+
+    ctx2d.fillStyle = tailGrad;
     ctx2d.beginPath();
-    if(noteH>rx*2){
-      ctx2d.moveTo(r.x-r.w/2+rx,visTop);ctx2d.lineTo(r.x+r.w/2-rx,visTop);
-      ctx2d.quadraticCurveTo(r.x+r.w/2,visTop,r.x+r.w/2,visTop+rx);
-      ctx2d.lineTo(r.x+r.w/2,visBot-rx);
-      ctx2d.quadraticCurveTo(r.x+r.w/2,visBot,r.x+r.w/2-rx,visBot);
-      ctx2d.lineTo(r.x-r.w/2+rx,visBot);
-      ctx2d.quadraticCurveTo(r.x-r.w/2,visBot,r.x-r.w/2,visBot-rx);
-      ctx2d.lineTo(r.x-r.w/2,visTop+rx);
-      ctx2d.quadraticCurveTo(r.x-r.w/2,visTop,r.x-r.w/2+rx,visTop);
-    }else{ctx2d.rect(r.x-r.w/2,visTop,r.w,noteH)}
-    ctx2d.closePath();ctx2d.fill();
-    ctx2d.shadowBlur=0;ctx2d.fillStyle='rgba(255,255,255,0.3)';
-    ctx2d.fillRect(r.x-r.w/2+2,visTop+1,r.w-4,Math.min(noteH*0.22,9));
+    
+    // 3. Dibujar la forma de estrella fugaz (cónica)
+    const headRadius = r.w * 0.4; // Ancho de la estrella basado en el carril
+    ctx2d.moveTo(r.x, visTop); // Punta superior de la estela
+    ctx2d.lineTo(r.x + headRadius, visBot); // Borde derecho hacia la cabeza
+    ctx2d.arc(r.x, visBot, headRadius, 0, Math.PI, false); // Curva inferior (la cabeza)
+    ctx2d.lineTo(r.x - headRadius, visBot); // Borde izquierdo
+    ctx2d.closePath();
+    ctx2d.fill();
+
+    // 4. Núcleo blanco brillante justo en el punto de impacto
+    ctx2d.shadowBlur = 0; // Apagamos la sombra general para que el núcleo resalte limpio
+    ctx2d.fillStyle = '#ffffff';
+    ctx2d.beginPath();
+    ctx2d.arc(r.x, visBot, headRadius * 0.45, 0, Math.PI * 2);
+    ctx2d.fill();
+
     ctx2d.restore();
   }
 }
@@ -1113,17 +1118,22 @@ function updHUD(){
 function spawnParticles(groups,type='good'){
   const stage=document.getElementById('stageWrap'),hy=HY();
   const cols={perfect:['#ffcc00','#fff','#ffaa00'],good:['#39ff14','#00f5ff'],ok:['#4488ff']};
-  const c=cols[type]||cols.good,cnt=type==='perfect'?16:10;
+  // Aumentamos un poco la cantidad de partículas para que se vea más espectacular
+  const c=cols[type]||cols.good,cnt=type==='perfect'?20:12; 
   groups.forEach(gi=>{
     const x=keyX[gi]||SW/2;
     for(let i=0;i<cnt;i++){
       const el=document.createElement('div');
-      if(type==='perfect'&&Math.random()>.5){
-        el.className='prt-star';el.textContent=['✦','★','✸'][i%3];
-        el.style.cssText=`left:${x}px;top:${hy}px;position:absolute;font-size:13px;color:${c[i%c.length]};--tx:${(Math.random()-.5)*130}px;--ty:${-(40+Math.random()*90)}px;z-index:40`;
+      const isStar = Math.random() > 0.4;
+      
+      if(isStar){
+        // Partículas en forma de estrellas reales y destellos
+        el.className='prt-star';el.textContent=['✦','★','✨'][i%3];
+        el.style.cssText=`left:${x}px;top:${hy}px;position:absolute;font-size:${10+Math.random()*8}px;color:${c[i%c.length]};text-shadow:0 0 8px ${c[i%c.length]};--tx:${(Math.random()-.5)*160}px;--ty:${-(50+Math.random()*120)}px;z-index:40`;
       }else{
-        el.className='prt';const sz=3+Math.random()*8;
-        el.style.cssText=`width:${sz}px;height:${sz}px;left:${x}px;top:${hy}px;background:${c[i%c.length]};position:absolute;--tx:${(Math.random()-.5)*120}px;--ty:${-(40+Math.random()*85)}px;z-index:40`;
+        // Chispas redondas y brillantes en lugar de cuadrados planos
+        el.className='prt';const sz=2+Math.random()*5;
+        el.style.cssText=`width:${sz}px;height:${sz}px;border-radius:50%;left:${x}px;top:${hy}px;background:${c[i%c.length]};box-shadow:0 0 10px ${c[i%c.length]};position:absolute;--tx:${(Math.random()-.5)*140}px;--ty:${-(40+Math.random()*100)}px;z-index:40`;
       }
       stage.appendChild(el);setTimeout(()=>el.remove(),800);
     }
