@@ -7,10 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
 <meta name="apple-mobile-web-app-title" content="Piano Hero">
 <meta name="theme-color" content="#05050e">
-<title>Piano Hero - Enhanced</title>
+<title>Piano Hero - Enhanced & Hold</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-/* ... (Se mantiene la mayor parte del CSS original para evitar romper tu diseño) ... */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#05050e;color:#fff;font-family:'Rajdhani',sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;}
 .screen{display:none;width:100%;height:100%;flex-direction:column}
@@ -293,14 +292,12 @@ function midiToGroup(midi){
   return 6;
 }
 
-// LÓGICA DE ALMACENAMIENTO (LocalStorage)
+// LocalStorage
 let bestScore = parseInt(localStorage.getItem('pianoHero_score') || '0');
 let bestCombo = parseInt(localStorage.getItem('pianoHero_combo') || '0');
-function updateHomeStats() {
-    document.getElementById('homeStats').textContent = `⭐ MEJOR PUNTAJE: ${bestScore.toLocaleString()} | 🔥 MAX COMBO: ${bestCombo}`;
-}
+function updateHomeStats() { document.getElementById('homeStats').textContent = `⭐ MEJOR PUNTAJE: ${bestScore.toLocaleString()} | 🔥 MAX COMBO: ${bestCombo}`; }
 
-// CLASE MIDI PARSER (Mantenida igual)
+// MIDI PARSER
 class MP{
   constructor(b){this.v=new DataView(b);this.len=b.byteLength;this.p=0}
   eof(){return this.p>=this.len}
@@ -381,7 +378,7 @@ function parseMidi(buf){
   return notes;
 }
 
-// AUDIO ENRIQUECIDO
+// AUDIO ENGINE
 let actx=null, reverbNode=null;
 const activeNotes={};
 
@@ -430,20 +427,14 @@ function startNote(midi, vel=0.75){
   tone.connect(master);
 
   const B=0.00015*Math.pow(2,(midi-69)/12*0.5);
-  // Sintetizador Mejorado: Más armónicos
   const harmonics=[
-    {n:1,vol:1.0,type:'sine'},
-    {n:2,vol:0.45,type:'sine'},
-    {n:3,vol:0.2,type:'sine'},
-    {n:4,vol:0.12,type:'triangle'},
-    {n:5,vol:0.06,type:'sine'},
-    {n:6,vol:0.03,type:'sine'},
+    {n:1,vol:1.0,type:'sine'}, {n:2,vol:0.45,type:'sine'}, {n:3,vol:0.2,type:'sine'},
+    {n:4,vol:0.12,type:'triangle'}, {n:5,vol:0.06,type:'sine'}, {n:6,vol:0.03,type:'sine'},
   ];
   const oscs=[];
   harmonics.forEach(h=>{
     const f=freq*h.n*Math.sqrt(1+B*h.n*h.n);
     const osc=ctx.createOscillator();osc.type=h.type;osc.frequency.value=f;
-    // Detune analógico aleatorio
     osc.detune.value = (Math.random() - 0.5) * 6;
     const g=ctx.createGain();g.gain.value=h.vol;
     osc.connect(g);g.connect(tone);
@@ -471,7 +462,7 @@ function stopNote(midi){
   delete activeNotes[midi];
   const ctx=getAudio();
   const now=ctx.currentTime;
-  const rel=0.25;
+  const rel=1.2; // Sustain Acústico / Efecto Pedal
   an.master.gain.cancelScheduledValues(now);
   an.master.gain.setValueAtTime(an.master.gain.value||0.05,now);
   an.master.gain.exponentialRampToValueAtTime(0.001,now+rel);
@@ -480,27 +471,46 @@ function stopNote(midi){
 
 function stopAllNotes(){ Object.keys(activeNotes).forEach(m=>stopNote(+m)); }
 
-// LÓGICA DE NOTAS DINÁMICAS (Encontrar la nota real de la canción)
 function getTargetMidiForGroup(groupIdx) {
     if (!G.playing || G.mode === 'free') return Math.round((KEY_GROUPS[groupIdx].lo+KEY_GROUPS[groupIdx].hi)/2);
-    
-    let bestNote = null;
-    let minDiff = Infinity;
-    
-    // Buscar la nota más cercana en el tiempo para este grupo
+    let bestNote = null; let minDiff = Infinity;
     for (const fn of falling) {
         if (fn.group === groupIdx && !fn.hit && !fn.removed) {
             const diff = Math.abs(fn.startMs - G.elapsed);
-            if (diff < minDiff && diff < 800) { // Ventana de búsqueda
-                minDiff = diff;
-                bestNote = fn.midi;
-            }
+            if (diff < minDiff && diff < 800) { minDiff = diff; bestNote = fn.midi; }
         }
     }
     return bestNote || Math.round((KEY_GROUPS[groupIdx].lo+KEY_GROUPS[groupIdx].hi)/2);
 }
 
-// TECLADO (Pulsaciones)
+// LÓGICA DE SOLTAR TECLA Y PENALIZAR
+function handleRelease(groupIdx) {
+    const el = keyEls[groupIdx];
+    if(!el) return;
+    
+    const activeMidi = parseInt(el.dataset.activeMidi);
+    if(!isNaN(activeMidi)) stopNote(activeMidi);
+    el.classList.remove('pressed');
+
+    if(!G.playing || G.paused || G.gameOver || G.mode === 'free') return;
+
+    // Buscar si estábamos sosteniendo una nota larga
+    const heldNote = falling.find(fn => fn.group === groupIdx && fn.isHolding && !fn.removed);
+    if(heldNote) {
+        heldNote.isHolding = false;
+        // Si la soltó más de 200ms antes de que termine, es penalización
+        if(G.elapsed < heldNote.endMs - 200) {
+            heldNote.missed = true; // Forzar fallo para que no puntúe más
+            G.misses++;
+            G.combo = 0;
+            dmgHP(10);
+            flashFB('¡MUY RÁPIDO!', false, 0, '#ff2d78');
+            updHUD();
+        }
+    }
+}
+
+// TECLADO (Touch y Click)
 let keyEls={}; 
 function buildPiano(){
   const row=document.getElementById('keysRow');
@@ -520,21 +530,18 @@ function buildPiano(){
       e.preventDefault();
       if(held)return;held=true;
       getAudio();
-      
       const midiToPlay = getTargetMidiForGroup(i);
       startNote(midiToPlay, 0.85);
-      el.dataset.activeMidi = midiToPlay; // Guardar qué nota específica se tocó
-      
+      el.dataset.activeMidi = midiToPlay;
       el.classList.add('pressed');
       handleInput(i);
     };
     const up=e=>{
       e.preventDefault();
       held=false;
-      const activeMidi = parseInt(el.dataset.activeMidi);
-      if(!isNaN(activeMidi)) stopNote(activeMidi);
-      el.classList.remove('pressed');
+      handleRelease(i);
     };
+    
     el.addEventListener('touchstart',dn,{passive:false});
     el.addEventListener('touchend',up,{passive:false});
     el.addEventListener('touchcancel',up,{passive:false});
@@ -556,7 +563,7 @@ function setKS(group,state){
 function keyScreenX(groupIdx){const r=keyEls[groupIdx]?.getBoundingClientRect(); return r?(r.left+r.width/2):stageW/2;}
 function keyScreenW(groupIdx){return keyEls[groupIdx]?.getBoundingClientRect().width || stageW/7;}
 
-// STAGE & RENDERING (Mantenido casi igual, omitiendo re-escritura masiva)
+// RENDER & STAGE
 let laneCanvas,lctx,stageW=0,stageH=0;
 const LOOKAHEAD_MS=3200;
 function initCanvas(){laneCanvas=document.getElementById('laneCanvas');lctx=laneCanvas.getContext('2d');resizeCvs();}
@@ -576,7 +583,6 @@ function drawStage(){
   drawBg(t); drawHighway(t); drawNotes(); drawHitZone();
 }
 
-// ... [Omitiendo funciones visuales intactas: drawBg, drawHighway, drawNotes, drawNoteTrap, drawHitZone, isKeyHot, shadeHex para ahorrar espacio. FUNCIONAN EXACTAMENTE IGUAL QUE EN EL ORIGINAL] ...
 function drawBg(t){
   const g=lctx.createLinearGradient(0,0,0,stageH);
   g.addColorStop(0,'#01010a');g.addColorStop(1,'#07071a');
@@ -589,6 +595,8 @@ function drawHighway(t){
   lctx.save();lctx.beginPath();lctx.moveTo(cx-2,vpy);lctx.lineTo(cx+2,vpy);lctx.lineTo(stageW,hy);lctx.lineTo(0,hy);lctx.closePath();
   const lg=lctx.createLinearGradient(0,vpy,0,hy);lg.addColorStop(0,'rgba(8,8,35,0)');lg.addColorStop(.5,'rgba(12,12,50,.55)');lg.addColorStop(1,'rgba(18,18,65,.85)');lctx.fillStyle=lg;lctx.fill();lctx.restore();
 }
+
+// ACTUALIZACIÓN DE ESTELAS LARGAS
 function drawNotes(){
   if(!G.playing&&!G.gameOver)return;
   const visible=[];
@@ -601,16 +609,43 @@ function drawNotes(){
     visible.push({fn,proj,t});
   }
   visible.sort((a,b)=>a.proj.p-b.proj.p);
-  for(const{fn,proj,t} of visible) drawNoteTrap(project(fn.group,t),project(fn.group,fn.endMs-G.elapsed),KEY_GROUPS[fn.group]);
+  
+  for(const{fn,proj,t} of visible) {
+    const isLong = (fn.endMs - fn.startMs) > 180;
+    drawNoteTrap(project(fn.group,t), project(fn.group,fn.endMs-G.elapsed), KEY_GROUPS[fn.group], isLong);
+  }
 }
-function drawNoteTrap(pt,pb,col){
-  const hy=getHitY(),vpy=getVPY(),x1=pt.x,y1=pt.y,w1=pt.w,x2=pb.x,y2=pb.y,w2=pb.w;
+
+function drawNoteTrap(pt,pb,col,isLong){
+  const hy=getHitY(),vpy=getVPY();
+  const x1=pt.x,y1=pt.y,w1=pt.w; 
+  const x2=pb.x,y2=pb.y,w2=pb.w; 
   if(y2<vpy-20||y1>stageH+20)return;
-  lctx.save();lctx.shadowColor=col.glow;lctx.shadowBlur=12+(1-pt.p)*16;
-  lctx.beginPath();lctx.moveTo(x1-w1/2,y1);lctx.lineTo(x1+w1/2,y1);lctx.lineTo(x2+w2/2,y2);lctx.lineTo(x2-w2/2,y2);lctx.closePath();
-  const g=lctx.createLinearGradient(x1,y1,x2,y2);g.addColorStop(0,col.hi2);g.addColorStop(.4,col.color);g.addColorStop(1,shadeHex(col.color,-55));
-  lctx.fillStyle=g;lctx.fill();lctx.restore();
+  lctx.save();
+  
+  // Dibujar Estela (Cola)
+  if(isLong){
+    const tailW1 = w1 * 0.35, tailW2 = w2 * 0.35;
+    lctx.beginPath(); lctx.moveTo(x1-tailW1/2, y1); lctx.lineTo(x1+tailW1/2, y1);
+    lctx.lineTo(x2+tailW2/2, y2); lctx.lineTo(x2-tailW2/2, y2); lctx.closePath();
+    lctx.fillStyle = col.color + '77'; lctx.fill();
+    lctx.strokeStyle = col.hi2 + 'AA'; lctx.lineWidth = 1; lctx.stroke();
+  }
+
+  // Dibujar Cabeza
+  const headH = Math.max(12, w1 * 0.3);
+  const headY2 = Math.max(y2, y1 - headH);
+  const hw2 = w1 - (w1 - w2) * ((y1 - headY2)/(y1 - y2 || 1));
+
+  lctx.shadowColor=col.glow;lctx.shadowBlur=12+(1-pt.p)*16;
+  lctx.beginPath(); lctx.moveTo(x1-w1/2, y1); lctx.lineTo(x1+w1/2, y1);
+  lctx.lineTo(x1+hw2/2, headY2); lctx.lineTo(x1-hw2/2, headY2); lctx.closePath();
+  const g=lctx.createLinearGradient(x1,y1,x1,headY2);
+  g.addColorStop(0,col.hi2); g.addColorStop(1,shadeHex(col.color,-30));
+  lctx.fillStyle=g;lctx.fill();
+  lctx.restore();
 }
+
 function shadeHex(hex,pct){
   const n=parseInt(hex.replace('#',''),16),r=Math.max(0,Math.min(255,((n>>16)&0xff)+pct)),g=Math.max(0,Math.min(255,((n>>8)&0xff)+pct)),b=Math.max(0,Math.min(255,(n&0xff)+pct));
   return`#${((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1)}`;
@@ -633,8 +668,7 @@ function drawHitZone(){
 }
 function isKeyHot(groupIdx){return falling.some(fn=>!fn.removed&&!fn.hit&&fn.group===groupIdx&&Math.abs(fn.startMs-G.elapsed)<260);}
 
-
-// HEALTH & DAMAGE (Dificultad progresiva)
+// HEALTH
 const MAX_HP=100;let HP=MAX_HP;
 function setHP(v){
   HP=Math.max(0,Math.min(MAX_HP,v));
@@ -648,7 +682,7 @@ function setHP(v){
   else pe.style.color='#39ff14';
   if(HP<=0)triggerGameOver();
 }
-function dmgHP(a){setHP(HP-(a * G.speed));screenFlash('rgba(255,0,0,.22)',100)} // Escala con velocidad
+function dmgHP(a){setHP(HP-(a * G.speed));screenFlash('rgba(255,0,0,.22)',100)} 
 function healHP(a){setHP(HP+a)}
 function screenFlash(col,ms){
   const fl=document.getElementById('flash');
@@ -694,19 +728,20 @@ function loop(now){
   while(G.spawnIdx<G.notes.length){
     const n=G.notes[G.spawnIdx];
     if(n.startMs>G.elapsed+AHEAD)break;
-    falling.push({midi:n.note,group:n.group,startMs:n.startMs,endMs:n.endMs,hit:false,missed:false,removed:false});
+    falling.push({midi:n.note,group:n.group,startMs:n.startMs,endMs:n.endMs,hit:false,missed:false,removed:false,isHolding:false});
     G.spawnIdx++;
   }
 
   for(const fn of falling){
     if(fn.removed)continue;
     const msSince=G.elapsed-fn.startMs;
-    // Ventana más indulgente para Relax mode basada en la velocidad
     if(!fn.hit&&!fn.missed&&G.mode==='relax'&&msSince> (520 * G.speed)){
       fn.missed=true;fn.removed=true;
       G.misses++;G.combo=0;dmgHP(10);flashFB('✗ MISS',false,0,'#ff2d78');updHUD();
     }
-    if(fn.hit&&msSince>3000)fn.removed=true;
+    
+    // Remueve la nota de la pantalla si ya pasó su cola final
+    if(fn.hit && G.elapsed > fn.endMs + 300) fn.removed=true;
   }
 
   if(G.mode==='relax'){
@@ -727,11 +762,10 @@ function loop(now){
   animId=requestAnimationFrame(loop);
 }
 
-// SCORING Y FEEDBACK MEJORADOS
+// SCORING
 function handleInput(groupIdx){
   if(!G.playing||G.paused||G.gameOver||G.mode==='free')return;
 
-  // Multiplicador de Combo Dinámico
   const comboMult = Math.min(4, 1 + Math.floor(G.combo/20)); 
 
   if(G.mode==='strict'){
@@ -739,6 +773,10 @@ function handleInput(groupIdx){
     if(!currentChord.groups.includes(groupIdx)){ flashFB('✗ INCORRECTO',false,0,'#ff2d78');dmgHP(8);return; }
     currentChord.done.add(groupIdx);setKS(groupIdx,'correct');
     
+    // Marcar retención si es nota larga en modo estricto
+    const targetNote = falling.find(fn => fn.group === groupIdx && !fn.removed && !fn.hit && Math.abs(fn.startMs - currentChord.ms) < 280);
+    if(targetNote && (targetNote.endMs - targetNote.startMs) > 180) { targetNote.isHolding = true; }
+
     if(currentChord.groups.every(g=>currentChord.done.has(g))){
       const n=currentChord.groups.length;
       G.hits+=n;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
@@ -760,6 +798,7 @@ function handleInput(groupIdx){
     return;
   }
 
+  // Relax mode
   let best=null,bestD=Infinity;
   for(const fn of falling){
     if(fn.hit||fn.missed||fn.group!==groupIdx)continue;
@@ -768,9 +807,12 @@ function handleInput(groupIdx){
   }
   
   if(best){
-    best.hit=true;G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+    best.hit=true;
+    // Marcar nota larga para evaluación al soltar
+    if ((best.endMs - best.startMs) > 180) best.isHolding = true;
+
+    G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
     
-    // Ventanas de tiempo más precisas (Perfect, Good, OK)
     const isPerfect = bestD < 90;
     const isGood = bestD < 200;
     const pts = (isPerfect?150:isGood?75:30) * comboMult;
@@ -789,7 +831,6 @@ function handleInput(groupIdx){
     
     spawnParts([groupIdx]);updHUD();
   } else {
-    // Penalización por presionar cuando no hay nota (Spamming)
     G.combo = 0; dmgHP(4); flashFB('✗ MISS',false,0,'#ff2d78'); updHUD();
   }
 }
@@ -867,7 +908,6 @@ function endGame(){
   const grade=acc>=95?'S':acc>=85?'A':acc>=70?'B':acc>=50?'C':'D';
   const emoji={S:'🏆',A:'🌟',B:'🎉',C:'👍',D:'😅'}[grade];
   
-  // Guardar en LocalStorage
   if(G.score > bestScore) { bestScore = G.score; localStorage.setItem('pianoHero_score', bestScore); }
   if(G.maxCombo > bestCombo) { bestCombo = G.maxCombo; localStorage.setItem('pianoHero_combo', bestCombo); }
   updateHomeStats();
@@ -943,21 +983,17 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Escape'){ if(G.paused)document.getElementById('pm-exit').click(); else if(G.playing&&!G.gameOver)document.getElementById('btnPause').click(); }
   
   const idx='1234567'.indexOf(e.key);
-  if(idx>=0&&G.playing&&!G.paused&&!G.gameOver){
+  if(idx>=0&&G.playing&&!G.paused&&!G.gameOver&&!keyEls[idx].classList.contains('pressed')){
     const midiToPlay = getTargetMidiForGroup(idx);
     getAudio();startNote(midiToPlay,.85);
-    keyEls[idx].dataset.activeMidi = midiToPlay; // Guardar nota
+    keyEls[idx].dataset.activeMidi = midiToPlay;
     keyEls[idx]?.classList.add('pressed');
     handleInput(idx);
   }
 });
 document.addEventListener('keyup',e=>{
   const idx='1234567'.indexOf(e.key);
-  if(idx>=0){
-    const activeMidi = parseInt(keyEls[idx].dataset.activeMidi);
-    if(!isNaN(activeMidi)) stopNote(activeMidi);
-    keyEls[idx]?.classList.remove('pressed');
-  }
+  if(idx>=0) handleRelease(idx);
 });
 
 function buildHomePreview(){
