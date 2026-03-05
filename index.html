@@ -156,7 +156,7 @@ input[type=range]::-webkit-slider-thumb{
 #healthFill::after{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:rgba(255,255,255,.28);border-radius:6px 6px 0 0}
 #healthTrack.danger #healthFill{background:linear-gradient(90deg,#cc0000,#ff2d78);animation:hpPulse .35s ease-in-out infinite alternate}
 #healthTrack.warn   #healthFill{background:linear-gradient(90deg,#bb7700,#ffcc00)}
-@keyframes hpPulse{from{box-shadow:0 0 4px #f00}to{box-shadow:0 0 20px #f00,0 0 40px rgba(255,0,0,.4)}}
+@keyframes hpPulse{from{box-shadow:inset 0 0 4px #f00}to{box-shadow:inset 0 0 20px #f00}}
 
 .hud-center{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:80px}
 #songTitleH{font-family:'Orbitron',monospace;font-size:8px;color:rgba(255,255,255,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
@@ -173,7 +173,7 @@ input[type=range]::-webkit-slider-thumb{
 
 /* Waiting bar */
 #waitBar{
-  display:none;position:relative;height:32px;flex-shrink:0;z-index:25;
+  visibility:hidden;position:relative;height:32px;flex-shrink:0;z-index:25;
   background:rgba(255,204,0,.05);border-bottom:1px solid rgba(255,204,0,.18);
 }
 #waitText{
@@ -185,7 +185,7 @@ input[type=range]::-webkit-slider-thumb{
 @keyframes wPulse{from{opacity:.5}to{opacity:1}}
 
 /* Stage */
-#stageWrap{flex:1;position:relative;overflow:hidden;min-height:0;background:#02020a}
+#stageWrap{flex:1;position:relative;overflow:hidden;min-height:0;background:#02020a;contain:strict;}
 #laneCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:3}
 #feedback{
   position:absolute;top:20%;left:50%;transform:translateX(-50%);
@@ -248,8 +248,9 @@ input[type=range]::-webkit-slider-thumb{
   flex-shrink:0;z-index:20;position:relative;
   background:linear-gradient(180deg,#08081a 0%,#05050e 100%);
   border-top:2px solid rgba(0,245,255,.2);
-  box-shadow:0 -10px 50px rgba(0,0,0,.9),0 -2px 20px rgba(0,245,255,.05);
   padding:8px 6px 10px;
+  overflow:hidden;
+  isolation:isolate;
 }
 #keysRow{display:flex;gap:5px;height:100%;width:100%;}
 .bigkey{
@@ -257,10 +258,11 @@ input[type=range]::-webkit-slider-thumb{
   display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
   padding-bottom:8px;gap:3px;
   position:relative;overflow:hidden;
-  transition:transform .06s,box-shadow .06s,filter .06s;
+  transition:filter .06s;
   -webkit-tap-highlight-color:transparent;
   border:2px solid rgba(255,255,255,.07);
   touch-action:none;
+  will-change:filter;
 }
 .bigkey::before{
   content:'';position:absolute;top:0;left:0;right:0;height:35%;
@@ -276,26 +278,19 @@ input[type=range]::-webkit-slider-thumb{
   color:rgba(255,255,255,.45);font-family:'Rajdhani',sans-serif;
   position:relative;z-index:1;
 }
-.bigkey.pressed{transform:scale(.94);filter:brightness(1.6);}
-.bigkey.glow{border-color:rgba(255,255,255,.35)!important;filter:brightness(1.35);animation:keyGlow .4s ease-in-out infinite alternate;}
+.bigkey.pressed{filter:brightness(1.9);}
+.bigkey.glow{border-color:rgba(255,255,255,.35)!important;filter:brightness(1.4);animation:keyGlow .4s ease-in-out infinite alternate;}
 @keyframes keyGlow{from{filter:brightness(1.2)}to{filter:brightness(1.6)}}
-.bigkey.waiting{border-color:#ffcc00!important;animation:keyWait .4s ease-in-out infinite alternate;}
-@keyframes keyWait{
-  from{box-shadow:0 0 20px rgba(255,204,0,.6),inset 0 0 20px rgba(255,204,0,.1)}
-  to{box-shadow:0 0 50px rgba(255,204,0,1),inset 0 0 40px rgba(255,204,0,.25)}
-}
-.bigkey.correct{
-  border-color:#39ff14!important;
-  box-shadow:0 0 40px rgba(57,255,20,.9),inset 0 0 30px rgba(57,255,20,.2)!important;
-  filter:brightness(1.7)!important;
-}
-.bigkey:nth-child(1){background:linear-gradient(160deg,#0a1535,#0d1f55);box-shadow:0 4px 20px rgba(30,80,255,.3)}
-.bigkey:nth-child(2){background:linear-gradient(160deg,#0a2a10,#0d4018);box-shadow:0 4px 20px rgba(30,180,60,.3)}
-.bigkey:nth-child(3){background:linear-gradient(160deg,#2a0a15,#4a0d22);box-shadow:0 4px 20px rgba(200,30,80,.3)}
-.bigkey:nth-child(4){background:linear-gradient(160deg,#2a1a00,#4a3000);box-shadow:0 4px 20px rgba(200,140,0,.3)}
-.bigkey:nth-child(5){background:linear-gradient(160deg,#1a0a35,#2d1555);box-shadow:0 4px 20px rgba(140,50,255,.3)}
-.bigkey:nth-child(6){background:linear-gradient(160deg,#2a1200,#4a2200);box-shadow:0 4px 20px rgba(220,100,0,.3)}
-.bigkey:nth-child(7){background:linear-gradient(160deg,#002a2a,#004040);box-shadow:0 4px 20px rgba(0,200,180,.3)}
+.bigkey.waiting{border-color:#ffcc00!important;filter:brightness(1.3);animation:keyWait .4s ease-in-out infinite alternate;}
+@keyframes keyWait{from{filter:brightness(1.1)}to{filter:brightness(1.5)}}
+.bigkey.correct{border-color:#39ff14!important;filter:brightness(1.8)!important;}
+.bigkey:nth-child(1){background:linear-gradient(160deg,#0a1535,#0d1f55);}
+.bigkey:nth-child(2){background:linear-gradient(160deg,#0a2a10,#0d4018);}
+.bigkey:nth-child(3){background:linear-gradient(160deg,#2a0a15,#4a0d22);}
+.bigkey:nth-child(4){background:linear-gradient(160deg,#2a1a00,#4a3000);}
+.bigkey:nth-child(5){background:linear-gradient(160deg,#1a0a35,#2d1555);}
+.bigkey:nth-child(6){background:linear-gradient(160deg,#2a1200,#4a2200);}
+.bigkey:nth-child(7){background:linear-gradient(160deg,#002a2a,#004040);}
 
 /* Song bar bottom */
 #songBar{
@@ -379,9 +374,8 @@ input[type=range]::-webkit-slider-thumb{
 .stat-v{font-family:'Orbitron',monospace;font-size:19px;font-weight:700;color:#00f5ff}
 .stat-l{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.26);margin-top:3px}
 
-/* Particles */
-.prt{position:absolute;pointer-events:none;border-radius:50%;animation:pBurst .7s ease-out forwards}
-@keyframes pBurst{to{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
+/* Particles - now drawn on canvas, this class unused but kept for safety */
+.prt{display:none}
 </style>
 </head>
 <body>
@@ -638,6 +632,27 @@ class MP{
   }
 }
 
+// Dynamic note→group mapping: built per-song so each unique pitch maps to one key
+let noteToGroup={};
+
+function buildNoteMapping(rawNotes){
+  // Count frequency of each MIDI pitch (0-127)
+  const freq={};
+  rawNotes.forEach(n=>{freq[n.note]=(freq[n.note]||0)+1;});
+  // Sort pitches by frequency descending, take up to 7 most common
+  const sorted=Object.keys(freq).map(Number).sort((a,b)=>freq[b]-freq[a]);
+  const top7=sorted.slice(0,7);
+  top7.sort((a,b)=>a-b);
+  noteToGroup={};
+  rawNotes.forEach(n=>{
+    if(noteToGroup[n.note]!==undefined)return;
+    let best=0,bestD=999;
+    top7.forEach((p,i)=>{const d=Math.abs(n.note-p);if(d<bestD){bestD=d;best=i;}});
+    noteToGroup[n.note]=best;
+  });
+  return top7;
+}
+
 function parseMidi(buf){
   const mp=new MP(buf);
   const{div,tracks}=mp.parse();
@@ -650,7 +665,7 @@ function parseMidi(buf){
     for(const te of tmap){if(te.tick>tick)break;ms+=(te.tick-lt)*cur/div/1000;lt=te.tick;cur=te.t}
     return ms+(tick-lt)*cur/div/1000;
   }
-  const notes=[];
+  const rawNotes=[];
   tracks.forEach((track)=>{
     const act={};
     track.forEach(e=>{
@@ -658,17 +673,20 @@ function parseMidi(buf){
       else if(e.type==='off'&&act[e.note]!=null){
         const s=t2ms(act[e.note]),en=t2ms(e.tick);
         if(en>s&&s>=0&&isFinite(s)&&isFinite(en))
-          notes.push({note:e.note,startMs:s,endMs:en,dur:en-s,group:midiToGroup(e.note)});
+          rawNotes.push({note:e.note,startMs:s,endMs:en,dur:en-s});
         delete act[e.note];
       }
     });
     Object.entries(act).forEach(([n,tk])=>{
       const s=t2ms(+tk);
-      if(s>=0&&isFinite(s))notes.push({note:+n,startMs:s,endMs:s+280,dur:280,group:midiToGroup(+n)});
+      if(s>=0&&isFinite(s))rawNotes.push({note:+n,startMs:s,endMs:s+280,dur:280});
     });
   });
-  if(!notes.length)throw new Error('El MIDI no contiene notas');
-  notes.sort((a,b)=>a.startMs-b.startMs);
+  if(!rawNotes.length)throw new Error('El MIDI no contiene notas');
+  rawNotes.sort((a,b)=>a.startMs-b.startMs);
+  // Build dynamic mapping then assign groups
+  buildNoteMapping(rawNotes);
+  const notes=rawNotes.map(n=>({...n,group:noteToGroup[n.note]??0}));
   return notes;
 }
 
@@ -802,15 +820,20 @@ function buildPiano(){
     const dn=e=>{
       e.preventDefault();if(held)return;held=true;
       getAudio();
-      // Play the exact MIDI note of the nearest falling note in this group
-      const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===i)
+      // Only play sound if there's a note actually near the hit zone
+      const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===i&&Math.abs(f.startMs-G.elapsed)<600)
         .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
-      lastPlayedMidi=nearest?nearest.midi:Math.round((kg.lo+kg.hi)/2);
-      startNote(lastPlayedMidi,0.75);el.classList.add('pressed');handleInput(i);
-      startToneTracker();
+      if(nearest){
+        lastPlayedMidi=nearest.midi;
+        startNote(lastPlayedMidi,0.75);
+        startToneTracker();
+      }
+      heldGroups.add(i);
+      el.classList.add('pressed');handleInput(i);
     };
     const up=e=>{
       e.preventDefault();held=false;
+      heldGroups.delete(i);
       stopNote(lastPlayedMidi);stopToneTracker();el.classList.remove('pressed');
     };
     el.addEventListener('touchstart',dn,{passive:false});
@@ -818,9 +841,11 @@ function buildPiano(){
     el.addEventListener('touchcancel',up,{passive:false});
     el.addEventListener('mousedown',dn);
     el.addEventListener('mouseup',up);
-    el.addEventListener('mouseleave',e=>{if(held){held=false;stopNote(lastPlayedMidi);stopToneTracker();el.classList.remove('pressed');}});
+    el.addEventListener('mouseleave',e=>{if(held){held=false;heldGroups.delete(i);stopNote(lastPlayedMidi);stopToneTracker();el.classList.remove('pressed');}});
     row.appendChild(el);keyEls[i]=el;
   });
+  // Cache coordinates after building keys (must be after DOM paint)
+  requestAnimationFrame(cacheKeyCoords);
 }
 
 function setKS(group,state){
@@ -829,18 +854,23 @@ function setKS(group,state){
   if(state)el.classList.add(state);
 }
 
-function keyScreenX(groupIdx){
-  const el=keyEls[groupIdx];
-  if(!el)return stageW/2;
-  const r=el.getBoundingClientRect();
+// Cached key screen coordinates — updated on resize/buildPiano, never during draw
+const keyX=new Array(7).fill(0);
+const keyW=new Array(7).fill(0);
+
+function cacheKeyCoords(){
   const sw=document.getElementById('stageWrap').getBoundingClientRect();
-  return r.left-sw.left+r.width/2;
+  for(let i=0;i<7;i++){
+    const el=keyEls[i];
+    if(!el){keyX[i]=stageW/2;keyW[i]=stageW/7;continue;}
+    const r=el.getBoundingClientRect();
+    keyX[i]=r.left-sw.left+r.width/2;
+    keyW[i]=r.width;
+  }
 }
-function keyScreenW(groupIdx){
-  const el=keyEls[groupIdx];
-  if(!el)return stageW/7;
-  return el.getBoundingClientRect().width;
-}
+
+function keyScreenX(groupIdx){return keyX[groupIdx]??stageW/2;}
+function keyScreenW(groupIdx){return keyW[groupIdx]??stageW/7;}
 
 // ═══════════════════════════════════════════════
 //  STAGE / PERSPECTIVE RENDERER
@@ -858,6 +888,7 @@ function resizeCvs(){
   stageW=sw.clientWidth||window.innerWidth;
   stageH=sw.clientHeight||300;
   laneCanvas.width=stageW;laneCanvas.height=stageH;
+  cacheKeyCoords();
 }
 
 function getVPY(){return -stageH*0.12;}
@@ -886,6 +917,7 @@ function drawStage(){
   drawHighway(t);
   drawNotes();
   drawHitZone();
+  drawParticles();
 }
 
 function drawBg(t){
@@ -981,7 +1013,9 @@ function drawNotes(){
   if(!G.playing&&!G.gameOver)return;
   const visible=[];
   for(const fn of falling){
-    if(fn.removed||fn.hit)continue;
+    if(fn.removed)continue;
+    if(fn.hit&&!fn.isHold)continue;       // tap note already scored, gone
+    if(fn.hit&&fn.isHold&&!fn.held)continue; // hold broken
     const t=fn.startMs-G.elapsed;
     if(t>LOOKAHEAD_MS+200)continue;
     const proj=project(fn.group,t);
@@ -991,45 +1025,56 @@ function drawNotes(){
   visible.sort((a,b)=>a.proj.p-b.proj.p);
   for(const{fn,proj,t} of visible){
     const col=KEY_GROUPS[fn.group];
-    const projTop=project(fn.group,t);
+    // Active hold: top clamped to hit line so tail shrinks as time passes
+    const tTop=(fn.isHold&&fn.hit)?0:t;
+    const projTop=project(fn.group,tTop);
     const projBot=project(fn.group,fn.endMs-G.elapsed);
-    drawNoteTrap(projTop,projBot,col);
+    drawNoteTrap(projTop,projBot,col,fn.isHold&&fn.hit);
   }
 }
 
-function drawNoteTrap(pt,pb,col){
+function drawNoteTrap(pt,pb,col,holdActive=false){
   const hy=getHitY(),vpy=getVPY();
   const x1=pt.x,y1=pt.y,w1=pt.w;
   const x2=pb.x,y2=pb.y,w2=pb.w;
   if(y2<vpy-20||y1>stageH+20)return;
 
-  lctx.save();
-  lctx.shadowColor=col.glow;lctx.shadowBlur=12+(1-pt.p)*16;
+  // Hold tail is narrower so it's visually distinct
+  const wm=holdActive?0.45:1.0;
+  const hw1=w1*wm, hw2=w2*wm;
 
-  // Body gradient
+  lctx.save();
+  lctx.shadowColor=holdActive?'#ffffff':col.glow;
+  lctx.shadowBlur=holdActive?22:12+(1-pt.p)*16;
+
+  // Body
   lctx.beginPath();
-  lctx.moveTo(x1-w1/2,y1);lctx.lineTo(x1+w1/2,y1);
-  lctx.lineTo(x2+w2/2,y2);lctx.lineTo(x2-w2/2,y2);
+  lctx.moveTo(x1-hw1/2,y1);lctx.lineTo(x1+hw1/2,y1);
+  lctx.lineTo(x2+hw2/2,y2);lctx.lineTo(x2-hw2/2,y2);
   lctx.closePath();
   const g=lctx.createLinearGradient(x1,y1,x2,y2);
-  g.addColorStop(0,col.hi2);g.addColorStop(.4,col.color);
-  g.addColorStop(1,shadeHex(col.color,-55));
+  if(holdActive){
+    g.addColorStop(0,'#fff');g.addColorStop(.25,col.hi2);g.addColorStop(1,col.color);
+  } else {
+    g.addColorStop(0,col.hi2);g.addColorStop(.4,col.color);
+    g.addColorStop(1,shadeHex(col.color,-55));
+  }
   lctx.fillStyle=g;lctx.fill();
 
   // Top shine
   lctx.shadowBlur=0;
-  const capH=Math.max(2,w1*.18);
+  const capH=Math.max(2,hw1*.18);
   lctx.fillStyle='rgba(255,255,255,.4)';
-  lctx.beginPath();lctx.moveTo(x1-w1/2,y1);lctx.lineTo(x1+w1/2,y1);
-  lctx.lineTo(x1+w1/2,y1+capH);lctx.lineTo(x1-w1/2,y1+capH);lctx.closePath();lctx.fill();
+  lctx.beginPath();lctx.moveTo(x1-hw1/2,y1);lctx.lineTo(x1+hw1/2,y1);
+  lctx.lineTo(x1+hw1/2,y1+capH);lctx.lineTo(x1-hw1/2,y1+capH);lctx.closePath();lctx.fill();
 
   // Bottom glow cap near hit zone
   const dist=Math.abs(y2-hy);
   if(dist<90){
     const alpha=(1-dist/90)*.4;
     lctx.fillStyle=`rgba(255,255,255,${alpha})`;
-    lctx.beginPath();lctx.moveTo(x2-w2/2,y2-capH);lctx.lineTo(x2+w2/2,y2-capH);
-    lctx.lineTo(x2+w2/2,y2);lctx.lineTo(x2-w2/2,y2);lctx.closePath();lctx.fill();
+    lctx.beginPath();lctx.moveTo(x2-hw2/2,y2-capH);lctx.lineTo(x2+hw2/2,y2-capH);
+    lctx.lineTo(x2+hw2/2,y2);lctx.lineTo(x2-hw2/2,y2);lctx.closePath();lctx.fill();
   }
 
   // Electric crackle near hit
@@ -1038,7 +1083,7 @@ function drawNoteTrap(pt,pb,col){
     lctx.strokeStyle=col.hi2+Math.round(alpha*255).toString(16).padStart(2,'0');
     lctx.lineWidth=1;
     for(let e=0;e<2;e++){
-      const ex=x2-w2/2+(w2)*Math.random();
+      const ex=x2-hw2/2+(hw2)*Math.random();
       lctx.beginPath();lctx.moveTo(ex,y2);
       lctx.lineTo(ex+(Math.random()-.5)*8,y2-5-Math.random()*10);
       lctx.stroke();
@@ -1077,7 +1122,6 @@ function drawHitZone(){
     lctx.save();
     if(hot||pressed){lctx.shadowColor=pressed?'#fff':kg.glow;lctx.shadowBlur=pressed?28:20;}
 
-    // Piano-key styled receptor (rounded rect)
     const kbx=kx-rx,kby=hy-ry*.8;
     const kbw=rx*2,kbh=ry*2.2;
     const rr=Math.min(kbw/2,6);
@@ -1095,13 +1139,6 @@ function drawHitZone(){
 
     lctx.strokeStyle=pressed?'#fff':hot?kg.hi2:'rgba(80,120,220,.4)';
     lctx.lineWidth=pressed?3:hot?2.5:1.2;lctx.stroke();
-
-    // Label
-    lctx.shadowBlur=0;
-    lctx.fillStyle=pressed?'rgba(0,0,0,.8)':hot?kg.hi2:'rgba(255,255,255,.2)';
-    lctx.font=`bold ${Math.max(8,Math.floor(ry*.9))}px Orbitron,monospace`;
-    lctx.textAlign='center';lctx.textBaseline='middle';
-    lctx.fillText(kg.label,kx,kby+kbh*0.5);
     lctx.restore();
   });
 
@@ -1239,6 +1276,7 @@ const G={
 };
 let falling=[],chords=[],chordIdx=0,currentChord=null,animId=0;
 const keyLastMidi={};
+const heldGroups=new Set(); // groups currently pressed by player
 
 function makeChords(notes){
   if(!notes.length)return[];
@@ -1270,7 +1308,7 @@ function loop(now){
         G.waiting=true;
         currentChord={...cg,done:new Set()};
         currentChord.groups.forEach(gi=>setKS(gi,'waiting'));
-        document.getElementById('waitBar').style.display='block';
+        document.getElementById('waitBar').style.visibility='visible';
       }
     }
   }
@@ -1279,18 +1317,38 @@ function loop(now){
   while(G.spawnIdx<G.notes.length){
     const n=G.notes[G.spawnIdx];
     if(n.startMs>G.elapsed+AHEAD)break;
-    falling.push({midi:n.note,group:n.group,startMs:n.startMs,endMs:n.endMs,hit:false,missed:false,removed:false});
+    falling.push({midi:n.note,group:n.group,startMs:n.startMs,endMs:n.endMs,
+      isHold:n.dur>300,held:false,
+      hit:false,missed:false,removed:false});
     G.spawnIdx++;
   }
 
   for(const fn of falling){
     if(fn.removed)continue;
     const msSince=G.elapsed-fn.startMs;
+
+    if(fn.isHold&&fn.hit){
+      fn.held=heldGroups.has(fn.group);
+      // Released too early → miss
+      if(!fn.held&&fn.endMs-G.elapsed>120){
+        fn.removed=true;
+        G.misses++;G.combo=0;dmgHP(10);flashFB('✗ SUELTA ANTES',false,0);updHUD();
+      }
+      // Held all the way to the end → reward
+      if(fn.endMs-G.elapsed<=0){
+        fn.removed=true;
+        const pts=150+G.combo*5;G.score+=pts;
+        if(G.combo%10===0)multPulse=1;
+        healHP(4);flashFB('PERFECTO! 🔥',true,pts);
+        spawnParts([fn.group]);updHUD();
+      }
+    }
+
     if(!fn.hit&&!fn.missed&&G.mode==='relax'&&msSince>500){
       fn.missed=true;fn.removed=true;
       G.misses++;G.combo=0;dmgHP(8);flashFB('✗ FALLADA',false,0);updHUD();
     }
-    if(fn.hit&&msSince>3000)fn.removed=true;
+    if(fn.hit&&!fn.isHold&&msSince>3000)fn.removed=true;
   }
 
   if(G.mode==='relax'){
@@ -1339,7 +1397,7 @@ function handleInput(groupIdx){
         if(fn)fn.hit=true;setKS(gi,null);
       });
       chordIdx++;currentChord=null;G.waiting=false;
-      document.getElementById('waitBar').style.display='none';
+      document.getElementById('waitBar').style.visibility='hidden';
       updHUD();
     }
     return;
@@ -1353,13 +1411,24 @@ function handleInput(groupIdx){
     if(d<bestD&&d<520){bestD=d;best=fn;}
   }
   if(best){
-    best.hit=true;G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
-    const pts=bestD<130?100:bestD<280?55:25;
-    G.score+=pts*Math.max(1,Math.floor(G.combo/5));
-    if(G.combo%10===0)multPulse=1;
-    healHP(bestD<130?3:1.5);
-    flashFB(bestD<130?'PERFECTO! ✨':bestD<280?'BIEN! ⚡':'OK',true,pts);
-    spawnParts([groupIdx]);updHUD();
+    best.hit=true;
+    if(best.isHold){
+      // Hold: register tap, keep alive, score at endMs
+      best.held=true;
+      G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+      if(G.combo%10===0)multPulse=1;
+      healHP(1);
+      flashFB('¡MANTÉN! 🎵',true,0);updHUD();
+    } else {
+      // Tap: score immediately and remove
+      G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+      const pts=bestD<130?100:bestD<280?55:25;
+      G.score+=pts*Math.max(1,Math.floor(G.combo/5));
+      if(G.combo%10===0)multPulse=1;
+      healHP(bestD<130?3:1.5);
+      flashFB(bestD<130?'PERFECTO! ✨':bestD<280?'BIEN! ⚡':'OK',true,pts);
+      spawnParts([groupIdx]);updHUD();
+    }
   }
 }
 
@@ -1403,7 +1472,7 @@ function launchFree(){
   showScreen('gameScreen');resizeCvs();buildPiano();
   document.getElementById('songTitleH').textContent='🎹 MODO LIBRE';
   document.getElementById('songBarName').textContent='🎹 MODO LIBRE — TOCA LIBREMENTE';
-  document.getElementById('waitBar').style.display='none';
+  document.getElementById('waitBar').style.visibility='hidden';
   document.getElementById('gameOverOv').classList.remove('show');
   updHUD();
   countdown(()=>{G.startTime=performance.now();animId=requestAnimationFrame(loop);});
@@ -1438,21 +1507,40 @@ function updHUD(){
   document.getElementById('scoreV').textContent=G.score.toLocaleString();
   document.getElementById('comboV').textContent='×'+G.combo;
 }
+// Canvas particle system — no DOM mutations
+const particles=[];
 function spawnParts(groups){
-  const fa=document.getElementById('stageWrap');
   const hy=getHitY();
-  const cols=['#00f5ff','#ffcc00','#39ff14','#ff2d78','#4488ff','#ff7700','#fff'];
+  const cols=['#00f5ff','#ffcc00','#39ff14','#ff2d78','#4488ff','#ff7700','#ffffff'];
   groups.forEach(gi=>{
     const x=keyScreenX(gi);
     for(let i=0;i<14;i++){
-      const p=document.createElement('div');p.className='prt';
-      const sz=3+Math.random()*9;
-      p.style.cssText=`width:${sz}px;height:${sz}px;left:${x}px;top:${hy}px;
-        background:${cols[Math.floor(Math.random()*cols.length)]};position:absolute;
-        --tx:${(Math.random()-.5)*120}px;--ty:${-(40+Math.random()*90)}px;z-index:40`;
-      fa.appendChild(p);setTimeout(()=>p.remove(),750);
+      const ang=Math.random()*Math.PI*2;
+      const spd=3+Math.random()*6;
+      particles.push({
+        x,y:hy,
+        vx:Math.cos(ang)*spd,
+        vy:Math.sin(ang)*spd-4,
+        life:1,
+        col:cols[Math.floor(Math.random()*cols.length)],
+        sz:2+Math.random()*5
+      });
     }
   });
+}
+function drawParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life-=0.04;
+    if(p.life<=0){particles.splice(i,1);continue;}
+    lctx.save();
+    lctx.globalAlpha=p.life;
+    lctx.fillStyle=p.col;
+    lctx.shadowColor=p.col;lctx.shadowBlur=4;
+    lctx.beginPath();lctx.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);lctx.fill();
+    lctx.restore();
+  }
+  lctx.globalAlpha=1;
 }
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1468,7 +1556,7 @@ function startGame(notes,name){
   cancelAnimationFrame(animId);stopAllNotes();
   HP=MAX_HP;setHP(HP);
   Object.assign(G,{notes,songName:name,score:0,combo:0,maxCombo:0,hits:0,misses:0,
-    elapsed:0,spawnIdx:0,playing:true,paused:false,gameOver:false,waiting:false});
+    elapsed:-2000,spawnIdx:0,playing:true,paused:false,gameOver:false,waiting:false});
   falling=[];currentChord=null;chords=makeChords(notes);chordIdx=0;
   G.totalDur=notes.length?notes[notes.length-1].endMs+2000:12000;
   document.getElementById('songTitleH').textContent=name;
@@ -1477,10 +1565,11 @@ function startGame(notes,name){
   document.getElementById('feedback').style.opacity='0';
   document.getElementById('pauseOv').classList.remove('show');
   document.getElementById('gameOverOv').classList.remove('show');
-  document.getElementById('waitBar').style.display='none';
+  document.getElementById('waitBar').style.visibility='hidden';
   KEY_GROUPS.forEach((_,i)=>setKS(i,null));
   updHUD();
-  G.startTime=performance.now();
+  // startTime offset so elapsed begins at -2000
+  G.startTime=performance.now()+(2000/G.speed);
   animId=requestAnimationFrame(loop);
 }
 
@@ -1548,7 +1637,7 @@ document.getElementById('pm-exit').addEventListener('click',()=>{
   cancelAnimationFrame(animId);stopAllNotes();
   document.getElementById('pauseOv').classList.remove('show');
   document.getElementById('gameOverOv').classList.remove('show');
-  document.getElementById('waitBar').style.display='none';
+  document.getElementById('waitBar').style.visibility='hidden';
   document.getElementById('countdownOv').classList.remove('show');
   showScreen('homeScreen');
 });
@@ -1612,11 +1701,13 @@ document.addEventListener('keydown',e=>{
   let idx='1234567'.indexOf(e.key);
   if(idx<0)idx='asdfghj'.indexOf(e.key.toLowerCase());
   if(idx>=0&&!e.repeat&&G.playing&&!G.paused&&!G.gameOver){
-    const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===idx)
+    const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===idx&&Math.abs(f.startMs-G.elapsed)<600)
       .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
-    const midi=nearest?nearest.midi:Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2);
-    getAudio();startNote(midi,.72);
-    keyLastMidi[idx]=midi;
+    if(nearest){
+      getAudio();startNote(nearest.midi,.72);
+      keyLastMidi[idx]=nearest.midi;
+    }
+    heldGroups.add(idx);
     keyEls[idx]?.classList.add('pressed');
     handleInput(idx);
   }
@@ -1625,6 +1716,7 @@ document.addEventListener('keyup',e=>{
   let idx='1234567'.indexOf(e.key);
   if(idx<0)idx='asdfghj'.indexOf(e.key.toLowerCase());
   if(idx>=0){
+    heldGroups.delete(idx);
     stopNote(keyLastMidi[idx]??Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2));
     keyEls[idx]?.classList.remove('pressed');
   }
