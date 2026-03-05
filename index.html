@@ -772,7 +772,8 @@ function buildPiano(){
   const row=document.getElementById('keysRow');
   row.innerHTML='';keyEls={};
   const landscape=window.innerWidth>window.innerHeight;
-  pianoH=landscape?150:130;
+  // Landscape: keys take more vertical space so the game fills the screen well
+  pianoH=landscape?Math.floor(window.innerHeight*0.32):Math.floor(window.innerHeight*0.22);
   document.getElementById('pianoWrapper').style.height=(pianoH+18)+'px';
   row.style.height=pianoH+'px';
 
@@ -783,6 +784,21 @@ function buildPiano(){
     el.style.borderColor=kg.color+'44';
     let held=false;
     let lastPlayedMidi=Math.round((kg.lo+kg.hi)/2);
+    // Live tone update: while key is held, if a new note arrives switch to it
+    let toneInterval=null;
+    const startToneTracker=()=>{
+      toneInterval=setInterval(()=>{
+        if(!held)return;
+        const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===i)
+          .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
+        if(nearest&&nearest.midi!==lastPlayedMidi){
+          stopNote(lastPlayedMidi);
+          lastPlayedMidi=nearest.midi;
+          startNote(lastPlayedMidi,0.75);
+        }
+      },40);
+    };
+    const stopToneTracker=()=>{clearInterval(toneInterval);toneInterval=null;};
     const dn=e=>{
       e.preventDefault();if(held)return;held=true;
       getAudio();
@@ -791,17 +807,18 @@ function buildPiano(){
         .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
       lastPlayedMidi=nearest?nearest.midi:Math.round((kg.lo+kg.hi)/2);
       startNote(lastPlayedMidi,0.75);el.classList.add('pressed');handleInput(i);
+      startToneTracker();
     };
     const up=e=>{
       e.preventDefault();held=false;
-      stopNote(lastPlayedMidi);el.classList.remove('pressed');
+      stopNote(lastPlayedMidi);stopToneTracker();el.classList.remove('pressed');
     };
     el.addEventListener('touchstart',dn,{passive:false});
     el.addEventListener('touchend',up,{passive:false});
     el.addEventListener('touchcancel',up,{passive:false});
     el.addEventListener('mousedown',dn);
     el.addEventListener('mouseup',up);
-    el.addEventListener('mouseleave',e=>{if(held){held=false;stopNote(lastPlayedMidi);el.classList.remove('pressed');}});
+    el.addEventListener('mouseleave',e=>{if(held){held=false;stopNote(lastPlayedMidi);stopToneTracker();el.classList.remove('pressed');}});
     row.appendChild(el);keyEls[i]=el;
   });
 }
@@ -1500,6 +1517,7 @@ function loadMidi(file){
       const groups=new Set(notes.map(n=>n.group)).size;
       document.getElementById('songInfo').textContent=`✅  ${notes.length} notas · ${groups} grupos · ${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')} · ${savedName}`;
       document.getElementById('btnPlay').disabled=false;
+      saveSongToLibrary(savedName,notes);
     }catch(err){document.getElementById('songInfo').textContent='❌ '+err.message}
   };
   r.readAsArrayBuffer(file);
@@ -1546,6 +1564,40 @@ document.getElementById('btnReplay').addEventListener('click',()=>{
 });
 document.getElementById('btnResHome').addEventListener('click',()=>showScreen('homeScreen'));
 
+// ── Saved songs library ──
+const STORAGE_KEY='pianohero_songs';
+function getSavedSongs(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return[]}}
+function saveSongToLibrary(name,notes){
+  const lib=getSavedSongs();
+  if(!lib.find(s=>s.name===name)){
+    lib.push({name,notes});
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(lib))}catch(e){}
+  }
+  renderSongLibrary();
+}
+function renderSongLibrary(){
+  const lib=getSavedSongs();
+  let el=document.getElementById('songLibrary');
+  if(!el){
+    el=document.createElement('div');el.id='songLibrary';
+    el.style.cssText='position:relative;z-index:1;width:100%;max-width:420px;display:flex;flex-direction:column;gap:6px;max-height:120px;overflow-y:auto';
+    document.getElementById('songInfo').after(el);
+  }
+  el.innerHTML='';
+  lib.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='btn btn-out';
+    btn.style.cssText='font-size:11px;padding:7px 14px;text-align:left;width:100%;font-family:Rajdhani,sans-serif;letter-spacing:1px';
+    btn.textContent='🎵 '+s.name;
+    btn.onclick=()=>{
+      savedNotes=s.notes;savedName=s.name;
+      document.getElementById('songInfo').textContent=`✅ ${s.notes.length} notas · ${s.name}`;
+      document.getElementById('btnPlay').disabled=false;
+    };
+    el.appendChild(btn);
+  });
+}
+
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'){e.preventDefault();
     if(G.gameOver)return;
@@ -1556,8 +1608,10 @@ document.addEventListener('keydown',e=>{
     if(G.paused)document.getElementById('pm-exit').click();
     else if(G.playing&&!G.gameOver)document.getElementById('btnPause').click();
   }
-  const idx='1234567'.indexOf(e.key);
-  if(idx>=0&&G.playing&&!G.paused&&!G.gameOver){
+  // Support both 1234567 and asdfghj
+  let idx='1234567'.indexOf(e.key);
+  if(idx<0)idx='asdfghj'.indexOf(e.key.toLowerCase());
+  if(idx>=0&&!e.repeat&&G.playing&&!G.paused&&!G.gameOver){
     const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===idx)
       .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
     const midi=nearest?nearest.midi:Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2);
@@ -1568,7 +1622,8 @@ document.addEventListener('keydown',e=>{
   }
 });
 document.addEventListener('keyup',e=>{
-  const idx='1234567'.indexOf(e.key);
+  let idx='1234567'.indexOf(e.key);
+  if(idx<0)idx='asdfghj'.indexOf(e.key.toLowerCase());
   if(idx>=0){
     stopNote(keyLastMidi[idx]??Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2));
     keyEls[idx]?.classList.remove('pressed');
@@ -1594,9 +1649,9 @@ function buildHomePreview(){
 }
 
 window.addEventListener('resize',()=>{buildPiano();resizeCvs();});
-window.addEventListener('orientationchange',()=>setTimeout(()=>{buildPiano();resizeCvs();},300));
+window.addEventListener('orientationchange',()=>setTimeout(()=>{buildPiano();resizeCvs();requestAnimationFrame(()=>{resizeCvs();});},350));
 window.addEventListener('load',()=>{
-  buildPiano();initCanvas();buildHomePreview();buildMeterTicks();
+  buildPiano();initCanvas();buildHomePreview();buildMeterTicks();renderSongLibrary();
 });
 </script>
 </body>
