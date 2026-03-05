@@ -779,25 +779,29 @@ function buildPiano(){
   KEY_GROUPS.forEach((kg,i)=>{
     const el=document.createElement('div');
     el.className='bigkey';
-    el.innerHTML=`<div class="key-num">${kg.label}</div><div class="key-note">${kg.note}</div>`;
+    el.innerHTML='';
     el.style.borderColor=kg.color+'44';
     let held=false;
+    let lastPlayedMidi=Math.round((kg.lo+kg.hi)/2);
     const dn=e=>{
       e.preventDefault();if(held)return;held=true;
-      getAudio();const midNote=Math.round((kg.lo+kg.hi)/2);
-      startNote(midNote,0.75);el.classList.add('pressed');handleInput(i);
+      getAudio();
+      // Play the exact MIDI note of the nearest falling note in this group
+      const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===i)
+        .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
+      lastPlayedMidi=nearest?nearest.midi:Math.round((kg.lo+kg.hi)/2);
+      startNote(lastPlayedMidi,0.75);el.classList.add('pressed');handleInput(i);
     };
     const up=e=>{
       e.preventDefault();held=false;
-      const midNote=Math.round((kg.lo+kg.hi)/2);
-      stopNote(midNote);el.classList.remove('pressed');
+      stopNote(lastPlayedMidi);el.classList.remove('pressed');
     };
     el.addEventListener('touchstart',dn,{passive:false});
     el.addEventListener('touchend',up,{passive:false});
     el.addEventListener('touchcancel',up,{passive:false});
     el.addEventListener('mousedown',dn);
     el.addEventListener('mouseup',up);
-    el.addEventListener('mouseleave',e=>{if(held){held=false;const mn=Math.round((kg.lo+kg.hi)/2);stopNote(mn);el.classList.remove('pressed');}});
+    el.addEventListener('mouseleave',e=>{if(held){held=false;stopNote(lastPlayedMidi);el.classList.remove('pressed');}});
     row.appendChild(el);keyEls[i]=el;
   });
 }
@@ -1216,6 +1220,7 @@ const G={
   score:0,combo:0,maxCombo:0,hits:0,misses:0,spawnIdx:0,waiting:false,
 };
 let falling=[],chords=[],chordIdx=0,currentChord=null,animId=0;
+const keyLastMidi={};
 
 function makeChords(notes){
   if(!notes.length)return[];
@@ -1552,8 +1557,11 @@ document.addEventListener('keydown',e=>{
   }
   const idx='1234567'.indexOf(e.key);
   if(idx>=0&&G.playing&&!G.paused&&!G.gameOver){
-    const midNote=Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2);
-    getAudio();startNote(midNote,.72);
+    const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===idx)
+      .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
+    const midi=nearest?nearest.midi:Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2);
+    getAudio();startNote(midi,.72);
+    keyLastMidi[idx]=midi;
     keyEls[idx]?.classList.add('pressed');
     handleInput(idx);
   }
@@ -1561,8 +1569,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{
   const idx='1234567'.indexOf(e.key);
   if(idx>=0){
-    const midNote=Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2);
-    stopNote(midNote);
+    stopNote(keyLastMidi[idx]??Math.round((KEY_GROUPS[idx].lo+KEY_GROUPS[idx].hi)/2));
     keyEls[idx]?.classList.remove('pressed');
   }
 });
