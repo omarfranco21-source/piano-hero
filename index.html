@@ -1094,7 +1094,8 @@ function drawHitZone(){
 function isKeyHot(groupIdx){
   for(const fn of falling){
     if(fn.removed||fn.hit)continue;
-    if(fn.group===groupIdx&&Math.abs(fn.startMs-G.elapsed)<260)return true;
+    const delta=fn.startMs-G.elapsed;
+    if(fn.group===groupIdx&&delta>=-80&&delta<=80)return true;
   }
   return false;
 }
@@ -1248,7 +1249,7 @@ function loop(now){
   if(G.mode==='strict'&&chords.length){
     if(!G.waiting&&chordIdx<chords.length){
       const cg=chords[chordIdx];
-      if(cg.ms<=G.elapsed+140){
+      if(cg.ms<=G.elapsed){
         G.waiting=true;
         currentChord={...cg,done:new Set()};
         currentChord.groups.forEach(gi=>setKS(gi,'waiting'));
@@ -1277,7 +1278,7 @@ function loop(now){
 
   if(G.mode==='relax'){
     KEY_GROUPS.forEach((_,i)=>{
-      const hot=falling.some(fn=>!fn.hit&&!fn.missed&&!fn.removed&&fn.group===i&&fn.startMs-G.elapsed>0&&fn.startMs-G.elapsed<380);
+      const hot=falling.some(fn=>!fn.hit&&!fn.missed&&!fn.removed&&fn.group===i&&fn.startMs-G.elapsed>=-80&&fn.startMs-G.elapsed<=80);
       const el=keyEls[i];if(!el)return;
       if(hot&&!el.classList.contains('pressed')&&!el.classList.contains('correct'))
         el.classList.add('glow');
