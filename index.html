@@ -1332,21 +1332,21 @@ function loop(now){
       // Released too early → miss
       if(!fn.held&&fn.endMs-G.elapsed>120){
         fn.removed=true;
-        G.misses++;G.combo=0;dmgHP(10);flashFB('✗ SUELTA ANTES',false,0);updHUD();
+        G.misses++;G.combo=0;dmgHP(1);flashFB('✗ SUELTA ANTES',false,0);updHUD();
       }
       // Held all the way to the end → reward
       if(fn.endMs-G.elapsed<=0){
         fn.removed=true;
         const pts=150+G.combo*5;G.score+=pts;
         if(G.combo%10===0)multPulse=1;
-        healHP(4);flashFB('PERFECTO! 🔥',true,pts);
+        healHP(5);flashFB('PERFECTO! 🔥',true,pts);
         spawnParts([fn.group]);updHUD();
       }
     }
 
     if(!fn.hit&&!fn.missed&&G.mode==='relax'&&msSince>500){
       fn.missed=true;fn.removed=true;
-      G.misses++;G.combo=0;dmgHP(8);flashFB('✗ FALLADA',false,0);updHUD();
+      G.misses++;G.combo=0;dmgHP(1);flashFB('✗ FALLADA',false,0);updHUD();
     }
     if(fn.hit&&!fn.isHold&&msSince>3000)fn.removed=true;
   }
@@ -1364,7 +1364,7 @@ function loop(now){
   drawStage();
   updateSidePanels();
   document.getElementById('progFill').style.width=Math.min(100,G.elapsed/G.totalDur*100)+'%';
-  if(G.mode!=='free'&&!G.waiting)setHP(HP-0.004*G.speed);
+  if(G.mode!=='free'&&!G.waiting)setHP(HP-0.001*G.speed);
 
   if(G.elapsed>G.totalDur+3000&&G.spawnIdx>=G.notes.length&&!falling.some(f=>!f.removed)){
     endGame();return;
@@ -1381,7 +1381,7 @@ function handleInput(groupIdx){
   if(G.mode==='strict'){
     if(!G.waiting||!currentChord)return;
     if(!currentChord.groups.includes(groupIdx)){
-      flashFB('✗ INCORRECTO',false,0);dmgHP(5);return;
+      flashFB('✗ INCORRECTO',false,0);dmgHP(1);return;
     }
     currentChord.done.add(groupIdx);setKS(groupIdx,'correct');
     if(currentChord.groups.every(g=>currentChord.done.has(g))){
@@ -1389,7 +1389,7 @@ function handleInput(groupIdx){
       G.hits+=n;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
       const pts=(100+G.combo*5)*n;G.score+=pts;
       if(G.combo%10===0)multPulse=1;
-      healHP(n>1?4:2.5+Math.min(G.combo*.25,5));
+      healHP(5);
       flashFB(G.combo>=10?'PERFECTO! 🔥':G.combo>=5?'GENIAL! ⚡':'BIEN! ✓',true,pts);
       spawnParts(currentChord.groups);
       currentChord.groups.forEach(gi=>{
@@ -1417,7 +1417,7 @@ function handleInput(groupIdx){
       best.held=true;
       G.hits++;G.combo++;if(G.combo>G.maxCombo)G.maxCombo=G.combo;
       if(G.combo%10===0)multPulse=1;
-      healHP(1);
+      healHP(5);
       flashFB('¡MANTÉN! 🎵',true,0);updHUD();
     } else {
       // Tap: score immediately and remove
@@ -1425,7 +1425,7 @@ function handleInput(groupIdx){
       const pts=bestD<130?100:bestD<280?55:25;
       G.score+=pts*Math.max(1,Math.floor(G.combo/5));
       if(G.combo%10===0)multPulse=1;
-      healHP(bestD<130?3:1.5);
+      healHP(5);
       flashFB(bestD<130?'PERFECTO! ✨':bestD<280?'BIEN! ⚡':'OK',true,pts);
       spawnParts([groupIdx]);updHUD();
     }
