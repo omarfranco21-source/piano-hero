@@ -802,7 +802,8 @@ function buildPiano(){
     el.style.borderColor=kg.color+'44';
     let held=false;
     let lastPlayedMidi=Math.round((kg.lo+kg.hi)/2);
-    // Live tone update: while key is held, if a new note arrives switch to it
+    let touchFired=false;
+    // Live tone update: while key is held, if a NEW different note arrives switch to it
     let toneInterval=null;
     const startToneTracker=()=>{
       toneInterval=setInterval(()=>{
@@ -820,7 +821,6 @@ function buildPiano(){
     const dn=e=>{
       e.preventDefault();if(held)return;held=true;
       getAudio();
-      // Only play sound if there's a note actually near the hit zone
       const nearest=falling.filter(f=>!f.hit&&!f.missed&&!f.removed&&f.group===i&&Math.abs(f.startMs-G.elapsed)<600)
         .sort((a,b)=>Math.abs(a.startMs-G.elapsed)-Math.abs(b.startMs-G.elapsed))[0];
       if(nearest){
@@ -831,15 +831,17 @@ function buildPiano(){
       heldGroups.add(i);
       el.classList.add('pressed');handleInput(i);
     };
+    const dnTouch=e=>{touchFired=true;dn(e);};
+    const dnMouse=e=>{if(touchFired){touchFired=false;return;}dn(e);};
     const up=e=>{
       e.preventDefault();held=false;
       heldGroups.delete(i);
       stopNote(lastPlayedMidi);stopToneTracker();el.classList.remove('pressed');
     };
-    el.addEventListener('touchstart',dn,{passive:false});
+    el.addEventListener('touchstart',dnTouch,{passive:false});
     el.addEventListener('touchend',up,{passive:false});
     el.addEventListener('touchcancel',up,{passive:false});
-    el.addEventListener('mousedown',dn);
+    el.addEventListener('mousedown',dnMouse);
     el.addEventListener('mouseup',up);
     el.addEventListener('mouseleave',e=>{if(held){held=false;heldGroups.delete(i);stopNote(lastPlayedMidi);stopToneTracker();el.classList.remove('pressed');}});
     row.appendChild(el);keyEls[i]=el;
