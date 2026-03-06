@@ -1288,7 +1288,9 @@ function makeChords(notes){
     while(i<notes.length&&notes[i].startMs<=base+65){
       g.groups.add(notes[i].group);i++;
     }
-    groups.push({ms:g.ms,groups:[...g.groups]});
+    // Cap at 3 simultaneous keys max
+    const grpArr=[...g.groups].slice(0,3);
+    groups.push({ms:g.ms,groups:grpArr});
   }
   return groups;
 }
@@ -1319,9 +1321,13 @@ function loop(now){
   while(G.spawnIdx<G.notes.length){
     const n=G.notes[G.spawnIdx];
     if(n.startMs>G.elapsed+AHEAD)break;
-    falling.push({midi:n.note,group:n.group,startMs:n.startMs,endMs:n.endMs,
-      isHold:n.dur>300,held:false,
-      hit:false,missed:false,removed:false});
+    // Count how many notes share the same start time slot (within 65ms)
+    const simultaneous=falling.filter(f=>!f.removed&&Math.abs(f.startMs-n.startMs)<65);
+    if(simultaneous.length<3){
+      falling.push({midi:n.note,group:n.group,startMs:n.startMs,endMs:n.endMs,
+        isHold:n.dur>300,held:false,
+        hit:false,missed:false,removed:false});
+    }
     G.spawnIdx++;
   }
 
